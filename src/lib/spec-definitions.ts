@@ -5,6 +5,10 @@ export interface SpecDefinition {
   url: string
 }
 
+const SWAGGER_CONFIG_PATHS = ['/v3/api-docs/swagger-config', '/swagger-config']
+
+const SWAGGER_PLACEHOLDER_HOST = /petstore(\d)?\.swagger\.io/i
+
 function resolveAgainst(base: URL, value: string): string {
   return new URL(value, base).href
 }
@@ -12,6 +16,22 @@ function resolveAgainst(base: URL, value: string): string {
 function swaggerUiBasePath(pathname: string): string {
   const match = pathname.match(/^(.*?)\/swagger-ui\/?/i)
   return match?.[1] ?? ''
+}
+
+function isSwaggerUiPage(pathname: string): boolean {
+  return /\/swagger-ui\/?/i.test(pathname)
+}
+
+function isPlaceholderSpecUrl(url: string): boolean {
+  try {
+    return SWAGGER_PLACEHOLDER_HOST.test(new URL(url).hostname)
+  } catch {
+    return SWAGGER_PLACEHOLDER_HOST.test(url)
+  }
+}
+
+function hasConfigUrlReference(text: string): boolean {
+  return /configUrl\s*:/.test(text)
 }
 
 function normalizeDefinitions(
@@ -55,7 +75,9 @@ function parseInitializerUrls(text: string, base: URL): SpecDefinition[] | null 
 
   const singleUrl = text.match(/url\s*:\s*["']([^"']+)["']/)
   if (singleUrl?.[1]?.trim() && !/urls\s*:\s*\[/.test(text)) {
-    return [{ name: 'default', url: resolveAgainst(base, singleUrl[1]) }]
+    const resolved = resolveAgainst(base, singleUrl[1])
+    if (isPlaceholderSpecUrl(resolved)) return null
+    return [{ name: 'default', url: resolved }]
   }
 
   return null
@@ -76,6 +98,7 @@ async function extractFromInitializer(initializerUrl: string): Promise<SpecDefin
     if (configUrl) {
       const fromConfig = await extractFromConfig(configUrl)
       if (fromConfig?.length) return fromConfig
+      if (hasConfigUrlReference(text)) return null
     }
 
     return parseInitializerUrls(text, base)
@@ -115,8 +138,11 @@ async function extractFromSwaggerUiPage(pageUrl: URL): Promise<SpecDefinition[] 
     }
 
     const urlMatch = html.match(/url\s*:\s*["']([^"']+)["']/)
-    if (urlMatch?.[1] && !urlMatch[1].includes('swagger-ui')) {
-      return [{ name: 'default', url: resolveAgainst(pageUrl, urlMatch[1]) }]
+    if (urlMatch?.[1] && !urlMatch[1].includes('swagger-ui') && !hasConfigUrlReference(html)) {
+      const resolved = resolveAgainst(pageUrl, urlMatch[1])
+      if (!isPlaceholderSpecUrl(resolved)) {
+        return [{ name: 'default', url: resolved }]
+      }
     }
   } catch {
     // try next strategy
@@ -166,6 +192,30 @@ async function discoverFromCandidates(pageUrl: URL): Promise<SpecDefinition[] | 
   return null
 }
 
+async function discoverFromSwaggerConfig(pageUrl: URL): Promise<SpecDefinition[] | null> {
+  const basePath = swaggerUiBasePath(pageUrl.pathname)
+  const bases = basePath
+    ? [new URL(basePath, pageUrl.origin), new URL(pageUrl.origin)]
+    : [new URL(pageUrl.origin)]
+
+  for (const base of bases) {
+    for (const configPath of SWAGGER_CONFIG_PATHS) {
+      const fromConfig = await extractFromConfig(resolveAgainst(base, configPath))
+      if (fromConfig?.length) return fromConfig
+    }
+  }
+
+  return null
+}
+
+async function discoverDirectSpecUrl(pageUrl: URL): Promise<SpecDefinition[] | null> {
+  if (isSwaggerUiPage(pageUrl.pathname)) return null
+  if (await looksLikeOpenApi(pageUrl.href)) {
+    return [{ name: 'default', url: pageUrl.href }]
+  }
+  return null
+}
+
 export async function discoverSpecDefinitions(sourceUrl: string): Promise<SpecDefinition[]> {
   const trimmed = sourceUrl.trim()
   const pageUrl = new URL(trimmed)
@@ -179,6 +229,14 @@ export async function discoverSpecDefinitions(sourceUrl: string): Promise<SpecDe
   if (configUrl) {
     const fromConfig = await extractFromConfig(resolveAgainst(pageUrl, configUrl))
     if (fromConfig) return fromConfig
+  }
+
+  const directSpec = await discoverDirectSpecUrl(pageUrl)
+  if (directSpec) return directSpec
+
+  if (isSwaggerUiPage(pageUrl.pathname)) {
+    const fromConfig = await discoverFromSwaggerConfig(pageUrl)
+    if (fromConfig?.length) return fromConfig
   }
 
   const fromPage = await extractFromSwaggerUiPage(pageUrl)
@@ -198,16 +256,14 @@ export async function discoverSpecDefinitions(sourceUrl: string): Promise<SpecDe
 
   if (fromPage?.length) return fromPage
 
-  for (const configPath of ['/v3/api-docs/swagger-config', '/swagger-config']) {
-    const fromConfig = await extractFromConfig(resolveAgainst(pageUrl, configPath))
-    if (fromConfig?.length) return fromConfig
-  }
+  const fromConfig = await discoverFromSwaggerConfig(pageUrl)
+  if (fromConfig?.length) return fromConfig
 
   const fromCandidates = await discoverFromCandidates(pageUrl)
   if (fromCandidates) return fromCandidates
 
   throw new Error(
-    'Could not find OpenAPI spec definitions. The page may use a non-standard config or block cross-origin access.',
+    'Could not find OpenAPI spec. Try pasting the direct spec URL (e.g. /v3/api-docs) if the API allows cross-origin access.',
   )
 }
 
