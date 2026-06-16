@@ -32,9 +32,19 @@ function isOperationSecured(
   return Boolean(spec.security?.length)
 }
 
-function scrollToOperation(opId: string) {
+function scrollToOperation(opId: string, smooth = false) {
   const el = document.querySelector(`[data-op-id="${CSS.escape(opId)}"]`)
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'start' })
+}
+
+function queueScrollToOperation(opId: string, smooth = false) {
+  const scroll = () => scrollToOperation(opId, smooth)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      scroll()
+      window.setTimeout(scroll, 0)
+    })
+  })
 }
 
 export function ApiDocument(props: ApiDocumentProps) {
@@ -55,28 +65,24 @@ export function ApiDocument(props: ApiDocumentProps) {
   })
 
   createEffect(() => {
-    const target = props.scrollToOp
-    if (!target) return
+    const op = props.expandedOp
+    if (!op) return
 
     props.loaded.specUrl
     const groups = grouped()
 
-    if (!operationExists(groups, target)) {
+    if (props.scrollToOp === op && !operationExists(groups, op)) {
       props.onScrollToOpDone()
       return
     }
 
-    if (props.expandedOp !== target) return
-
-    const tag = findOperationTag(groups, target)
+    const tag = findOperationTag(groups, op)
     if (!tag || !openTags().has(tag)) return
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollToOperation(target)
-        props.onScrollToOpDone()
-      })
-    })
+    queueScrollToOperation(op, props.scrollToOp === op)
+    if (props.scrollToOp === op) {
+      props.onScrollToOpDone()
+    }
   })
 
   const toggleTag = (tag: string) => {

@@ -1,4 +1,4 @@
-import { createMemo } from 'solid-js'
+import { createEffect, createMemo } from 'solid-js'
 import { createVirtualizer } from '@tanstack/solid-virtual'
 import hljs from 'highlight.js/lib/core'
 import jsonLang from 'highlight.js/lib/languages/json'
@@ -9,6 +9,13 @@ interface VirtualJsonViewerProps {
   data: unknown
   maxHeight?: string
   class?: string
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
 
 function toPrettyJson(data: unknown): { text: string; language: 'json' | 'plaintext' } {
@@ -41,7 +48,12 @@ export function VirtualJsonViewer(props: VirtualJsonViewerProps) {
     if (language === 'json') {
       return hljs.highlight(text, { language: 'json' }).value.split('\n')
     }
-    return text.split('\n').map((line) => hljs.highlight(line, { language: 'plaintext' }).value)
+    return text.split('\n').map((line) => escapeHtml(line))
+  })
+
+  createEffect(() => {
+    props.data
+    if (scrollRef) scrollRef.scrollTop = 0
   })
 
   const virtualizer = createVirtualizer({

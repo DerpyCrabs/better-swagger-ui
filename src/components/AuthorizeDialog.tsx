@@ -10,7 +10,10 @@ interface AuthorizeDialogProps {
   onClose: () => void
 }
 
-function OAuthPasswordForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'oauth2-password' }> }) {
+function OAuthPasswordForm(props: {
+  scheme: Extract<SecuritySchemeInfo, { kind: 'oauth2-password' }>
+  onAuthorized?: () => void
+}) {
   const auth = useAuth()
   const [username, setUsername] = createSignal('')
   const [password, setPassword] = createSignal('')
@@ -35,6 +38,7 @@ function OAuthPasswordForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 
         clientSecret: clientSecret(),
         clientCredentialsLocation: credentialsLocation(),
       })
+      props.onAuthorized?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authorization failed')
     } finally {
@@ -162,6 +166,7 @@ function OAuthPasswordForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 
 
 function OAuthClientCredentialsForm(props: {
   scheme: Extract<SecuritySchemeInfo, { kind: 'oauth2-client-credentials' }>
+  onAuthorized?: () => void
 }) {
   const auth = useAuth()
   const [clientId, setClientId] = createSignal(props.scheme.clientId)
@@ -183,6 +188,7 @@ function OAuthClientCredentialsForm(props: {
         clientSecret: clientSecret(),
         clientCredentialsLocation: credentialsLocation(),
       })
+      props.onAuthorized?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authorization failed')
     } finally {
@@ -274,7 +280,10 @@ function OAuthClientCredentialsForm(props: {
   )
 }
 
-function ApiKeyForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'apiKey' }> }) {
+function ApiKeyForm(props: {
+  scheme: Extract<SecuritySchemeInfo, { kind: 'apiKey' }>
+  onAuthorized?: () => void
+}) {
   const auth = useAuth()
   const [value, setValue] = createSignal('')
   const authorized = () => auth.isAuthorized(props.scheme.id)
@@ -304,7 +313,10 @@ function ApiKeyForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'apiKey
         />
         <button
           type="button"
-          onClick={() => auth.authorizeApiKey(props.scheme.id, value())}
+          onClick={() => {
+            auth.authorizeApiKey(props.scheme.id, value())
+            props.onAuthorized?.()
+          }}
           class="rounded border border-emerald-600 px-4 py-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400"
         >
           Authorize
@@ -314,7 +326,10 @@ function ApiKeyForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'apiKey
   )
 }
 
-function BearerForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'http-bearer' }> }) {
+function BearerForm(props: {
+  scheme: Extract<SecuritySchemeInfo, { kind: 'http-bearer' }>
+  onAuthorized?: () => void
+}) {
   const auth = useAuth()
   const [token, setToken] = createSignal('')
   const authorized = () => auth.isAuthorized(props.scheme.id)
@@ -340,7 +355,10 @@ function BearerForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'http-b
         />
         <button
           type="button"
-          onClick={() => auth.authorizeBearer(props.scheme.id, token())}
+          onClick={() => {
+            auth.authorizeBearer(props.scheme.id, token())
+            props.onAuthorized?.()
+          }}
           class="rounded border border-emerald-600 px-4 py-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400"
         >
           Authorize
@@ -350,18 +368,18 @@ function BearerForm(props: { scheme: Extract<SecuritySchemeInfo, { kind: 'http-b
   )
 }
 
-function SchemeForm(props: { scheme: SecuritySchemeInfo }) {
+function SchemeForm(props: { scheme: SecuritySchemeInfo; onAuthorized?: () => void }) {
   if (props.scheme.kind === 'oauth2-password') {
-    return <OAuthPasswordForm scheme={props.scheme} />
+    return <OAuthPasswordForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
   }
   if (props.scheme.kind === 'oauth2-client-credentials') {
-    return <OAuthClientCredentialsForm scheme={props.scheme} />
+    return <OAuthClientCredentialsForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
   }
   if (props.scheme.kind === 'apiKey') {
-    return <ApiKeyForm scheme={props.scheme} />
+    return <ApiKeyForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
   }
   if (props.scheme.kind === 'http-bearer') {
-    return <BearerForm scheme={props.scheme} />
+    return <BearerForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
   }
   return null
 }
@@ -399,7 +417,7 @@ export function AuthorizeDialog(props: AuthorizeDialogProps) {
             </p>
 
             <For each={auth.schemes()}>
-              {(scheme) => <SchemeForm scheme={scheme} />}
+              {(scheme) => <SchemeForm scheme={scheme} onAuthorized={props.onClose} />}
             </For>
           </div>
 

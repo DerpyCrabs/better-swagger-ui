@@ -1,7 +1,7 @@
-import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
 import type { OpenAPIV3 } from 'openapi-types'
-import { ChevronDown, ChevronUp, LoaderCircle, Lock, Play } from '../icons'
+import { ChevronDown, ChevronUp, Download, LoaderCircle, Lock, Play } from '../icons'
 import type { OperationItem } from '../lib/operations'
 import { methodColor } from '../lib/operations'
 import {
@@ -14,6 +14,7 @@ import { MarkdownText } from './MarkdownText'
 import { ParamInput } from './ParamInput'
 import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
+import { CopyButton } from './CopyButton'
 import { useAuth } from '../lib/auth-context'
 import {
   appendQueryParam,
@@ -23,6 +24,8 @@ import {
   validateParamValue,
   type ParamInputMeta,
 } from '../lib/param-schema'
+import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
+import { buildAcceptHeader } from '../lib/accept-header'
 
 interface OperationBlockProps {
   item: OperationItem
@@ -42,6 +45,12 @@ interface TryItResult {
   durationMs: number
   body: unknown
   contentType: string | null
+  copyText: string
+  isFile: boolean
+  blob?: Blob
+  fileName: string | null
+  contentDisposition: string | null
+  requestUrl: string
 }
 
 function buildUrl(
@@ -91,6 +100,7 @@ export function OperationBlock(props: OperationBlockProps) {
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
   const [result, setResult] = createSignal<TryItResult | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = createSignal<string | null>(null)
 
   const requestBodyInfo = createMemo(() =>
     getRequestBodySchema(props.spec, props.item.operation.requestBody),
@@ -128,6 +138,19 @@ export function OperationBlock(props: OperationBlockProps) {
     setBodyError(null)
     setError(null)
     setResult(null)
+    setFilePreviewUrl(null)
+  })
+
+  createEffect(() => {
+    const res = result()
+    if (!res?.isFile || !res.blob || !res.contentType?.startsWith('image/')) {
+      setFilePreviewUrl(null)
+      return
+    }
+
+    const nextUrl = URL.createObjectURL(res.blob)
+    setFilePreviewUrl(nextUrl)
+    onCleanup(() => URL.revokeObjectURL(nextUrl))
   })
 
   createEffect(() => {
@@ -167,6 +190,7 @@ export function OperationBlock(props: OperationBlockProps) {
     setBodyError(null)
     setError(null)
     setResult(null)
+    setFilePreviewUrl(null)
     props.onTryItOutDismiss()
   }
 
@@ -197,7 +221,7 @@ export function OperationBlock(props: OperationBlockProps) {
     const url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
 
     const headers: Record<string, string> = {
-      Accept: 'application/json, text/plain, */*',
+      Accept: buildAcceptHeader(props.item.operation),
       ...auth.getRequestHeaders(),
     }
 
@@ -220,24 +244,20 @@ export function OperationBlock(props: OperationBlockProps) {
 
     try {
       const response = await fetch(url, init)
-      const contentType = response.headers.get('content-type')
-      const raw = await response.text()
-
-      let parsed: unknown = raw
-      if (contentType?.includes('json')) {
-        try {
-          parsed = JSON.parse(raw)
-        } catch {
-          parsed = raw
-        }
-      }
+      const parsed = await parseResponseBody(response, url)
 
       setResult({
         status: response.status,
         statusText: response.statusText,
         durationMs: Math.round(performance.now() - started),
-        body: parsed,
-        contentType,
+        body: parsed.body,
+        contentType: parsed.contentType,
+        copyText: parsed.copyText,
+        isFile: parsed.isFile,
+        blob: parsed.blob,
+        fileName: parsed.fileName,
+        contentDisposition: parsed.contentDisposition,
+        requestUrl: url,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
@@ -247,6 +267,21 @@ export function OperationBlock(props: OperationBlockProps) {
   }
 
   const summary = () => props.item.operation.summary ?? ''
+
+  const downloadFile = (res: TryItResult) => {
+    if (!res.blob) return
+    const objectUrl = URL.createObjectURL(res.blob)
+    const anchor = document.createElement('a')
+    anchor.href = objectUrl
+    anchor.download = resolveDownloadName(
+      res.fileName,
+      res.contentDisposition,
+      res.contentType,
+      res.requestUrl,
+    )
+    anchor.click()
+    URL.revokeObjectURL(objectUrl)
+  }
 
   return (
     <div
@@ -395,28 +430,31 @@ export function OperationBlock(props: OperationBlockProps) {
                       <td class="py-1.5">
                         <Show when={tryItOut()} fallback={<span class="text-zinc-500 dark:text-zinc-500">—</span>}>
                           <div class="space-y-0.5">
-                            <textarea
-                              rows={4}
-                              value={body()}
-                              onClick={(event) => event.stopPropagation()}
-                              onInput={(event) => {
-                                setBody(event.currentTarget.value)
-                                if (bodyError()) setBodyError(null)
-                              }}
-                              onBlur={() => {
-                                try {
-                                  JSON.parse(body())
-                                  setBodyError(null)
-                                } catch {
-                                  setBodyError('Request body must be valid JSON')
-                                }
-                              }}
-                              class={`w-full max-w-lg rounded border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-1 dark:bg-zinc-950 dark:text-zinc-100 ${
-                                bodyError()
-                                  ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50 dark:border-rose-500'
-                                  : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:border-zinc-600'
-                              }`}
-                            />
+                            <div class="flex max-w-lg items-start gap-2">
+                              <textarea
+                                rows={4}
+                                value={body()}
+                                onClick={(event) => event.stopPropagation()}
+                                onInput={(event) => {
+                                  setBody(event.currentTarget.value)
+                                  if (bodyError()) setBodyError(null)
+                                }}
+                                onBlur={() => {
+                                  try {
+                                    JSON.parse(body())
+                                    setBodyError(null)
+                                  } catch {
+                                    setBodyError('Request body must be valid JSON')
+                                  }
+                                }}
+                                class={`min-w-0 flex-1 rounded border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-1 dark:bg-zinc-950 dark:text-zinc-100 ${
+                                  bodyError()
+                                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50 dark:border-rose-500'
+                                    : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:border-zinc-600'
+                                }`}
+                              />
+                              <CopyButton text={body} label="Copy" class="shrink-0" />
+                            </div>
                             <Show when={bodyError()}>
                               <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
                             </Show>
@@ -464,8 +502,28 @@ export function OperationBlock(props: OperationBlockProps) {
           <Show when={result()}>
             {(res) => (
               <div class="mt-2 space-y-1.5 border-t border-zinc-300 pt-2 dark:border-zinc-700">
-                <div class="text-xs font-bold tracking-wide text-zinc-900 uppercase dark:text-zinc-100">
-                  Response
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="text-xs font-bold tracking-wide text-zinc-900 uppercase dark:text-zinc-100">
+                    Response
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Show when={res().isFile}>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          downloadFile(res())
+                        }}
+                        class="inline-flex items-center gap-1 rounded border border-zinc-400 px-2 py-0.5 text-xs font-medium text-zinc-700 hover:bg-white dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      >
+                        <Download size={12} />
+                        Download
+                      </button>
+                    </Show>
+                    <Show when={!res().isFile || res().copyText}>
+                      <CopyButton text={() => res().copyText} label="Copy" />
+                    </Show>
+                  </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 text-sm">
                   <span
@@ -478,8 +536,34 @@ export function OperationBlock(props: OperationBlockProps) {
                     {res().status} {res().statusText}
                   </span>
                   <span class="text-zinc-500">{res().durationMs} ms</span>
+                  <Show when={res().contentType}>
+                    <span class="font-mono text-xs text-zinc-500">{res().contentType}</span>
+                  </Show>
                 </div>
-                <VirtualJsonViewer data={res().body} maxHeight="32rem" />
+                <Show
+                  when={res().isFile}
+                  fallback={<VirtualJsonViewer data={res().body} maxHeight="32rem" />}
+                >
+                  <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+                    <p class="text-zinc-700 dark:text-zinc-300">
+                      File response
+                      <Show when={res().fileName}>
+                        {(name) => (
+                          <span class="ml-1 font-mono text-zinc-600 dark:text-zinc-400">({name()})</span>
+                        )}
+                      </Show>
+                    </p>
+                    <Show when={filePreviewUrl()}>
+                      {(previewUrl) => (
+                        <img
+                          src={previewUrl()}
+                          alt={res().fileName ?? 'Response image'}
+                          class="mt-2 max-h-64 max-w-full rounded border border-zinc-200 dark:border-zinc-700"
+                        />
+                      )}
+                    </Show>
+                  </div>
+                </Show>
               </div>
             )}
           </Show>
