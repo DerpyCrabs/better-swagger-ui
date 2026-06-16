@@ -11,9 +11,18 @@ import {
   schemaTypeLabel,
 } from '../lib/schema'
 import { MarkdownText } from './MarkdownText'
+import { ParamInput } from './ParamInput'
 import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 import { useAuth } from '../lib/auth-context'
+import {
+  appendQueryParam,
+  emptyParamValues,
+  resolveParameterMeta,
+  validateAllParams,
+  validateParamValue,
+  type ParamInputMeta,
+} from '../lib/param-schema'
 
 interface OperationBlockProps {
   item: OperationItem
@@ -27,14 +36,6 @@ interface OperationBlockProps {
   onToggle: () => void
 }
 
-interface ParamField {
-  name: string
-  in: OpenAPIV3.ParameterObject['in']
-  required: boolean
-  description?: string
-  schemaType: string
-}
-
 interface TryItResult {
   status: number
   statusText: string
@@ -43,56 +44,28 @@ interface TryItResult {
   contentType: string | null
 }
 
-function paramSchemaType(param: OpenAPIV3.ParameterObject): string {
-  const schema = param.schema
-  if (!schema || '$ref' in schema) return 'string'
-
-  if ('type' in schema && schema.type === 'array') {
-    const items = schema.items
-    if (items && 'type' in items && typeof items.type === 'string') {
-      return `array[${items.type}]`
-    }
-    return 'array'
-  }
-
-  if ('type' in schema && schema.type) return schema.type
-  return 'string'
-}
-
-function resolveParameters(item: OperationItem): ParamField[] {
-  return (item.operation.parameters ?? [])
-    .filter((param): param is OpenAPIV3.ParameterObject => !('$ref' in param))
-    .filter((param) => param.in === 'path' || param.in === 'query' || param.in === 'header')
-    .map((param) => ({
-      name: param.name,
-      in: param.in,
-      required: Boolean(param.required),
-      description: param.description,
-      schemaType: paramSchemaType(param),
-    }))
-}
-
-function emptyParamValues(defs: ParamField[]): Record<string, string> {
-  return Object.fromEntries(defs.map((param) => [param.name, '']))
-}
-
 function buildUrl(
   serverUrl: string,
   specUrl: string,
   path: string,
-  defs: ParamField[],
+  defs: ParamInputMeta[],
   values: Record<string, string>,
 ): string {
   let resolvedPath = path
   const query = new URLSearchParams()
 
   for (const param of defs) {
-    const value = values[param.name]
-    if (!value) continue
+    const value = values[param.name] ?? ''
     if (param.in === 'path') {
-      resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(value))
-    } else if (param.in === 'query') {
-      query.set(param.name, value)
+      const trimmed = value.trim()
+      if (trimmed) {
+        resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(trimmed))
+      }
+      continue
+    }
+
+    if (param.in === 'query') {
+      appendQueryParam(query, param, value)
     }
   }
 
@@ -110,9 +83,11 @@ function resolveServerUrl(serverUrl: string, specUrl: string): string {
 export function OperationBlock(props: OperationBlockProps) {
   const auth = useAuth()
   const [tryItOut, setTryItOut] = createSignal(false)
-  const paramDefs = createMemo(() => resolveParameters(props.item))
+  const paramDefs = createMemo(() => resolveParameterMeta(props.spec, props.item))
   const [paramValues, setParamValues] = createStore<Record<string, string>>({})
+  const [paramErrors, setParamErrors] = createStore<Record<string, string>>({})
   const [body, setBody] = createSignal('{}')
+  const [bodyError, setBodyError] = createSignal<string | null>(null)
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
   const [result, setResult] = createSignal<TryItResult | null>(null)
@@ -147,8 +122,10 @@ export function OperationBlock(props: OperationBlockProps) {
 
   createEffect(() => {
     props.item.id
-    setParamValues(reconcile(emptyParamValues(resolveParameters(props.item))))
+    setParamValues(reconcile(emptyParamValues(resolveParameterMeta(props.spec, props.item))))
+    setParamErrors(reconcile({}))
     setBody(defaultBodyText())
+    setBodyError(null)
     setError(null)
     setResult(null)
   })
@@ -159,20 +136,59 @@ export function OperationBlock(props: OperationBlockProps) {
 
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
 
+  const clearParamError = (name: string) => {
+    if (!paramErrors[name]) return
+    setParamErrors((state) => {
+      const next = { ...state }
+      delete next[name]
+      return next
+    })
+  }
+
   const updateParam = (name: string, value: string) => {
     setParamValues(name, value)
+    clearParamError(name)
+  }
+
+  const validateParam = (param: ParamInputMeta) => {
+    const message = validateParamValue(param, paramValues[param.name] ?? '')
+    if (message) {
+      setParamErrors(param.name, message)
+      return
+    }
+    clearParamError(param.name)
   }
 
   const cancelTryItOut = () => {
     setTryItOut(false)
     setParamValues(reconcile(emptyParamValues(paramDefs())))
+    setParamErrors(reconcile({}))
     setBody(defaultBodyText())
+    setBodyError(null)
     setError(null)
     setResult(null)
     props.onTryItOutDismiss()
   }
 
   const execute = async () => {
+    const validationErrors = validateAllParams(paramDefs(), paramValues)
+    setParamErrors(reconcile(validationErrors))
+    if (Object.keys(validationErrors).length > 0) {
+      setError('Fix parameter validation errors before executing')
+      return
+    }
+
+    if (hasRequestBody() && props.item.method !== 'get' && props.item.method !== 'head') {
+      try {
+        JSON.parse(body())
+        setBodyError(null)
+      } catch {
+        setBodyError('Request body must be valid JSON')
+        setError('Fix request body validation errors before executing')
+        return
+      }
+    }
+
     setLoading(true)
     setError(null)
     setResult(null)
@@ -329,6 +345,12 @@ export function OperationBlock(props: OperationBlockProps) {
                           </div>
                           <div class="mt-px font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
                             {param.schemaType}
+                            <Show when={param.enumValues?.length}>
+                              <span class="text-zinc-500 dark:text-zinc-500">
+                                {' '}
+                                ({param.enumValues!.join(' | ')})
+                              </span>
+                            </Show>
                             <span class="text-zinc-500 dark:text-zinc-500"> · {param.in}</span>
                           </div>
                         </td>
@@ -349,15 +371,12 @@ export function OperationBlock(props: OperationBlockProps) {
                                 {param.description}
                               </p>
                             </Show>
-                            <input
-                              type="text"
+                            <ParamInput
+                              meta={param}
                               value={paramValues[param.name] ?? ''}
-                              placeholder={param.name}
-                              onClick={(event) => event.stopPropagation()}
-                              onInput={(event) =>
-                                updateParam(param.name, event.currentTarget.value)
-                              }
-                              class="w-full max-w-sm rounded border border-zinc-400 bg-white px-2 py-1 text-[13px] text-zinc-900 placeholder:text-zinc-500 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                              error={paramErrors[param.name]}
+                              onInput={(value) => updateParam(param.name, value)}
+                              onBlur={() => validateParam(param)}
                             />
                           </Show>
                         </td>
@@ -376,13 +395,33 @@ export function OperationBlock(props: OperationBlockProps) {
                       </td>
                       <td class="py-1.5">
                         <Show when={tryItOut()} fallback={<span class="text-zinc-500 dark:text-zinc-500">—</span>}>
-                          <textarea
-                            rows={4}
-                            value={body()}
-                            onClick={(event) => event.stopPropagation()}
-                            onInput={(event) => setBody(event.currentTarget.value)}
-                            class="w-full max-w-lg rounded border border-zinc-400 bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-                          />
+                          <div class="space-y-0.5">
+                            <textarea
+                              rows={4}
+                              value={body()}
+                              onClick={(event) => event.stopPropagation()}
+                              onInput={(event) => {
+                                setBody(event.currentTarget.value)
+                                if (bodyError()) setBodyError(null)
+                              }}
+                              onBlur={() => {
+                                try {
+                                  JSON.parse(body())
+                                  setBodyError(null)
+                                } catch {
+                                  setBodyError('Request body must be valid JSON')
+                                }
+                              }}
+                              class={`w-full max-w-lg rounded border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-1 dark:bg-zinc-950 dark:text-zinc-100 ${
+                                bodyError()
+                                  ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50 dark:border-rose-500'
+                                  : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:border-zinc-600'
+                              }`}
+                            />
+                            <Show when={bodyError()}>
+                              <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+                            </Show>
+                          </div>
                         </Show>
                       </td>
                     </tr>
