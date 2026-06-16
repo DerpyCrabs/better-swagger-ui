@@ -1,3 +1,5 @@
+import { proxyFetch } from './proxy-fetch'
+
 export type ClientCredentialsLocation = 'body' | 'header'
 
 export interface PasswordTokenRequest {
@@ -45,7 +47,7 @@ export async function fetchPasswordToken(
     body.set('client_secret', request.clientSecret)
   }
 
-  const response = await fetch(request.tokenUrl, {
+  const response = await proxyFetch(request.tokenUrl, {
     method: 'POST',
     headers,
     body: body.toString(),
@@ -90,7 +92,7 @@ export async function fetchClientCredentialsToken(
     body.set('client_secret', clientSecret)
   }
 
-  const response = await fetch(tokenUrl, {
+  const response = await proxyFetch(tokenUrl, {
     method: 'POST',
     headers,
     body: body.toString(),

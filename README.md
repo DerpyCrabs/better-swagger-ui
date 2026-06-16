@@ -18,7 +18,13 @@ npm install
 npm run dev
 ```
 
-Cross-origin requests go directly from the browser. The target API must allow CORS or be on the same origin.
+To bypass CORS while developing, start the dev server with the local proxy enabled:
+
+```bash
+npm run dev:proxy
+```
+
+This routes cross-origin requests through `/__proxy` on the local Vite dev server only. Regular `npm run dev`, Vercel deployments, and production builds call APIs directly from the browser, so the target API must allow CORS or be on the same origin.
 
 ## Usage
 
@@ -35,4 +41,4 @@ Cross-origin requests go directly from the browser. The target API must allow CO
 - No YAML paste/upload — Swagger UI links only
 - Simple parameter support (path, query, header) + raw JSON body
 - No auth flows beyond OAuth2 password/client credentials from `swagger-initializer.js`
-- Cross-origin specs require CORS on the API host
+- Cross-origin specs require CORS on the API host in production builds

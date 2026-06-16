@@ -1,3 +1,5 @@
+import { proxyFetch } from './proxy-fetch'
+
 function wrapFetchError(url: string, err: unknown): Error {
   if (err instanceof TypeError) {
     return new Error(
@@ -9,7 +11,7 @@ function wrapFetchError(url: string, err: unknown): Error {
 
 async function fetchResponse(url: string): Promise<Response> {
   try {
-    return await fetch(url)
+    return await proxyFetch(url)
   } catch (err) {
     throw wrapFetchError(url, err)
   }

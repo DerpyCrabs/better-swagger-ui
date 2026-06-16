@@ -26,6 +26,7 @@ import {
 } from '../lib/param-schema'
 import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
 import { buildAcceptHeader } from '../lib/accept-header'
+import { proxyFetch } from '../lib/proxy-fetch'
 
 interface OperationBlockProps {
   item: OperationItem
@@ -243,7 +244,7 @@ export function OperationBlock(props: OperationBlockProps) {
     }
 
     try {
-      const response = await fetch(url, init)
+      const response = await proxyFetch(url, init)
       const parsed = await parseResponseBody(response, url)
 
       setResult({
