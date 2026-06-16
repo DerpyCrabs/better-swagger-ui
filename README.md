@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Requests to external Swagger/OpenAPI hosts go through a built-in dev/preview proxy at `/api/proxy?url=...` to avoid browser CORS limits.
+Cross-origin requests go directly from the browser. The target API must allow CORS or be on the same origin.
 
 ## Usage
 
@@ -34,5 +34,5 @@ Requests to external Swagger/OpenAPI hosts go through a built-in dev/preview pro
 
 - No YAML paste/upload — Swagger UI links only
 - Simple parameter support (path, query, header) + raw JSON body
-- No auth flows (OAuth2, etc.)
-- Proxy required for cross-origin specs (included in Vite dev/preview)
+- No auth flows beyond OAuth2 password/client credentials from `swagger-initializer.js`
+- Cross-origin specs require CORS on the API host

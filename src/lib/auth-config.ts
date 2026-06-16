@@ -1,5 +1,5 @@
 import type { OpenAPIV3 } from 'openapi-types'
-import { proxyFetchText } from './proxy-fetch'
+import { fetchText } from './fetch-utils'
 
 export interface InitOAuthConfig {
   clientId?: string
@@ -72,7 +72,7 @@ export async function loadInitOAuth(sourceUrl: string): Promise<InitOAuthConfig 
 
   for (const initializerUrl of initializerPaths) {
     try {
-      const text = await proxyFetchText(initializerUrl)
+      const text = await fetchText(initializerUrl)
       const config = parseInitOAuth(text)
       if (config) return config
     } catch {

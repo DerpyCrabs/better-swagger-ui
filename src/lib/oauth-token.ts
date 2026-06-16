@@ -45,8 +45,7 @@ export async function fetchPasswordToken(
     body.set('client_secret', request.clientSecret)
   }
 
-  const proxyUrl = `/api/proxy?url=${encodeURIComponent(request.tokenUrl)}`
-  const response = await fetch(proxyUrl, {
+  const response = await fetch(request.tokenUrl, {
     method: 'POST',
     headers,
     body: body.toString(),
@@ -91,8 +90,7 @@ export async function fetchClientCredentialsToken(
     body.set('client_secret', clientSecret)
   }
 
-  const proxyUrl = `/api/proxy?url=${encodeURIComponent(tokenUrl)}`
-  const response = await fetch(proxyUrl, {
+  const response = await fetch(tokenUrl, {
     method: 'POST',
     headers,
     body: body.toString(),

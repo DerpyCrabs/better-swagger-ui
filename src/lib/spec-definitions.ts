@@ -1,4 +1,4 @@
-import { proxyFetchJson, proxyFetchText } from './proxy-fetch'
+import { fetchJson, fetchText } from './fetch-utils'
 
 export interface SpecDefinition {
   name: string
@@ -69,7 +69,7 @@ function parseInitializerConfigUrl(text: string, base: URL): string | null {
 
 async function extractFromInitializer(initializerUrl: string): Promise<SpecDefinition[] | null> {
   try {
-    const text = await proxyFetchText(initializerUrl)
+    const text = await fetchText(initializerUrl)
     const base = new URL(initializerUrl)
 
     const configUrl = parseInitializerConfigUrl(text, base)
@@ -86,7 +86,7 @@ async function extractFromInitializer(initializerUrl: string): Promise<SpecDefin
 
 async function extractFromConfig(configUrl: string): Promise<SpecDefinition[] | null> {
   try {
-    const config = await proxyFetchJson<{ url?: string; urls?: { url: string; name?: string }[] }>(
+    const config = await fetchJson<{ url?: string; urls?: { url: string; name?: string }[] }>(
       configUrl,
     )
 
@@ -106,7 +106,7 @@ async function extractFromConfig(configUrl: string): Promise<SpecDefinition[] | 
 
 async function extractFromSwaggerUiPage(pageUrl: URL): Promise<SpecDefinition[] | null> {
   try {
-    const html = await proxyFetchText(pageUrl.href)
+    const html = await fetchText(pageUrl.href)
 
     const configMatch = html.match(/configUrl\s*:\s*["']([^"']+)["']/)
     if (configMatch?.[1]) {
@@ -150,7 +150,7 @@ function buildCandidates(pageUrl: URL): string[] {
 
 async function looksLikeOpenApi(url: string): Promise<boolean> {
   try {
-    const json = await proxyFetchJson<Record<string, unknown>>(url)
+    const json = await fetchJson<Record<string, unknown>>(url)
     return typeof json.openapi === 'string' || typeof json.swagger === 'string'
   } catch {
     return false
@@ -207,7 +207,7 @@ export async function discoverSpecDefinitions(sourceUrl: string): Promise<SpecDe
   if (fromCandidates) return fromCandidates
 
   throw new Error(
-    'Could not find OpenAPI spec definitions. The page may use a non-standard config or block proxy access.',
+    'Could not find OpenAPI spec definitions. The page may use a non-standard config or block cross-origin access.',
   )
 }
 

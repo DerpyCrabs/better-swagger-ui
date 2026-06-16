@@ -219,8 +219,7 @@ export function OperationBlock(props: OperationBlockProps) {
     }
 
     try {
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`
-      const response = await fetch(proxyUrl, init)
+      const response = await fetch(url, init)
       const contentType = response.headers.get('content-type')
       const raw = await response.text()
 

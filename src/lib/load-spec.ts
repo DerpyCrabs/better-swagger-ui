@@ -1,7 +1,7 @@
 import type { OpenAPIV3 } from 'openapi-types'
 import type { InitOAuthConfig } from './auth-config'
 import { loadInitOAuth } from './auth-config'
-import { proxyFetchJson } from './proxy-fetch'
+import { fetchJson } from './fetch-utils'
 import {
   discoverSpecDefinitions,
   pickDefinition,
@@ -35,7 +35,7 @@ function assertOpenApi(doc: unknown): asserts doc is OpenAPIV3.Document {
 }
 
 export async function loadSpecDocument(specUrl: string): Promise<OpenAPIV3.Document> {
-  const raw = await proxyFetchJson(specUrl)
+  const raw = await fetchJson(specUrl)
   assertOpenApi(raw)
   return raw
 }
@@ -58,7 +58,7 @@ export async function loadSpecFromSwaggerUi(
   const selected = pickDefinition(definitions, definitionName)
 
   const [raw, oauthInit] = await Promise.all([
-    proxyFetchJson(selected.url),
+    fetchJson(selected.url),
     loadInitOAuth(trimmed),
   ])
 
