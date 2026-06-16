@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+}
+
+body {
+  @apply m-0 min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+}
+
+:root:not(.dark) .hljs-string {
+  color: #a31515;
+}
+
+:root:not(.dark) .hljs-number {
+  color: #098658;
+}
+
+:root:not(.dark) .hljs-literal,
+:root:not(.dark) .hljs-keyword {
+  color: #0000ff;
+}
+
+:root:not(.dark) .hljs-attr {
+  color: #001080;
+}
+
+:root:not(.dark) .hljs-punctuation {
+  color: #393a34;
+}
+
+.dark .hljs-string {
+  color: #ce9178;
+}
+
+.dark .hljs-number {
+  color: #b5cea8;
+}
+
+.dark .hljs-literal,
+.dark .hljs-keyword {
+  color: #569cd6;
+}
+
+.dark .hljs-attr {
+  color: #9cdcfe;
+}
+
+.dark .hljs-punctuation {
+  color: #d4d4d4;
+}
