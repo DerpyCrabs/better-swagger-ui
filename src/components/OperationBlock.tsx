@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
+import { createStore, reconcile } from 'solid-js/store'
 import type { OpenAPIV3 } from 'openapi-types'
-import { ChevronDown, ChevronUp, LoaderCircle, Lock, Play } from 'lucide-solid'
+import { ChevronDown, ChevronUp, LoaderCircle, Lock, Play } from '../icons'
 import type { OperationItem } from '../lib/operations'
 import { methodColor } from '../lib/operations'
 import {
@@ -12,6 +13,7 @@ import {
 import { MarkdownText } from './MarkdownText'
 import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
+import { useAuth } from '../lib/auth-context'
 
 interface OperationBlockProps {
   item: OperationItem
@@ -31,7 +33,6 @@ interface ParamField {
   required: boolean
   description?: string
   schemaType: string
-  value: string
 }
 
 interface TryItResult {
@@ -68,30 +69,30 @@ function resolveParameters(item: OperationItem): ParamField[] {
       required: Boolean(param.required),
       description: param.description,
       schemaType: paramSchemaType(param),
-      value: '',
     }))
 }
 
-function resolveServerUrl(serverUrl: string, specUrl: string): string {
-  if (/^https?:\/\//i.test(serverUrl)) return serverUrl
-  return new URL(serverUrl, new URL(specUrl).origin).href
+function emptyParamValues(defs: ParamField[]): Record<string, string> {
+  return Object.fromEntries(defs.map((param) => [param.name, '']))
 }
 
 function buildUrl(
   serverUrl: string,
   specUrl: string,
   path: string,
-  params: ParamField[],
+  defs: ParamField[],
+  values: Record<string, string>,
 ): string {
   let resolvedPath = path
   const query = new URLSearchParams()
 
-  for (const param of params) {
-    if (!param.value) continue
+  for (const param of defs) {
+    const value = values[param.name]
+    if (!value) continue
     if (param.in === 'path') {
-      resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(param.value))
+      resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(value))
     } else if (param.in === 'query') {
-      query.set(param.name, param.value)
+      query.set(param.name, value)
     }
   }
 
@@ -101,9 +102,16 @@ function buildUrl(
   return queryString ? `${url}?${queryString}` : url
 }
 
+function resolveServerUrl(serverUrl: string, specUrl: string): string {
+  if (/^https?:\/\//i.test(serverUrl)) return serverUrl
+  return new URL(serverUrl, new URL(specUrl).origin).href
+}
+
 export function OperationBlock(props: OperationBlockProps) {
+  const auth = useAuth()
   const [tryItOut, setTryItOut] = createSignal(false)
-  const [params, setParams] = createSignal<ParamField[]>([])
+  const paramDefs = createMemo(() => resolveParameters(props.item))
+  const [paramValues, setParamValues] = createStore<Record<string, string>>({})
   const [body, setBody] = createSignal('{}')
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
@@ -139,7 +147,7 @@ export function OperationBlock(props: OperationBlockProps) {
 
   createEffect(() => {
     props.item.id
-    setParams(resolveParameters(props.item).map((param) => ({ ...param, value: '' })))
+    setParamValues(reconcile(emptyParamValues(resolveParameters(props.item))))
     setBody(defaultBodyText())
     setError(null)
     setResult(null)
@@ -152,14 +160,12 @@ export function OperationBlock(props: OperationBlockProps) {
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
 
   const updateParam = (name: string, value: string) => {
-    setParams((current) =>
-      current.map((param) => (param.name === name ? { ...param, value } : param)),
-    )
+    setParamValues(name, value)
   }
 
   const cancelTryItOut = () => {
     setTryItOut(false)
-    setParams(resolveParameters(props.item).map((param) => ({ ...param, value: '' })))
+    setParamValues(reconcile(emptyParamValues(paramDefs())))
     setBody(defaultBodyText())
     setError(null)
     setResult(null)
@@ -172,15 +178,17 @@ export function OperationBlock(props: OperationBlockProps) {
     setResult(null)
 
     const started = performance.now()
-    const url = buildUrl(props.serverUrl, props.specUrl, props.item.path, params())
+    const url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
 
     const headers: Record<string, string> = {
       Accept: 'application/json, text/plain, */*',
+      ...auth.getRequestHeaders(),
     }
 
-    for (const param of params()) {
-      if (param.in === 'header' && param.value) {
-        headers[param.name] = param.value
+    for (const param of paramDefs()) {
+      const value = paramValues[param.name]
+      if (param.in === 'header' && value) {
+        headers[param.name] = value
       }
     }
 
@@ -297,7 +305,7 @@ export function OperationBlock(props: OperationBlockProps) {
           </div>
 
           <Show
-            when={params().length > 0 || hasRequestBody()}
+            when={paramDefs().length > 0 || hasRequestBody()}
             fallback={<p class="py-1 text-xs text-zinc-600 dark:text-zinc-400">No parameters</p>}
           >
             <div class="overflow-x-auto">
@@ -309,7 +317,7 @@ export function OperationBlock(props: OperationBlockProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={params()}>
+                  <For each={paramDefs()}>
                     {(param) => (
                       <tr class="border-t border-zinc-300 align-top dark:border-zinc-700">
                         <td class="py-1.5 pr-3">
@@ -343,7 +351,7 @@ export function OperationBlock(props: OperationBlockProps) {
                             </Show>
                             <input
                               type="text"
-                              value={param.value}
+                              value={paramValues[param.name] ?? ''}
                               placeholder={param.name}
                               onClick={(event) => event.stopPropagation()}
                               onInput={(event) =>
@@ -387,8 +395,6 @@ export function OperationBlock(props: OperationBlockProps) {
           <Show when={requestBodyInfo()}>
             {(info) => <RequestBodySchemaView info={info()} />}
           </Show>
-
-          <ResponsesSchemaView responses={responseSchemas()} />
 
           <Show when={tryItOut()}>
             <div class="mt-2 border-t border-zinc-300 pt-2 dark:border-zinc-700">
@@ -439,6 +445,8 @@ export function OperationBlock(props: OperationBlockProps) {
               </div>
             )}
           </Show>
+
+          <ResponsesSchemaView responses={responseSchemas()} />
         </div>
       </Show>
     </div>

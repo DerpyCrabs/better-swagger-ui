@@ -1,5 +1,5 @@
 import { For, Show, createEffect, createSignal } from 'solid-js'
-import { ChevronDown, ChevronUp } from 'lucide-solid'
+import { ChevronDown, ChevronUp } from '../icons'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { LoadedSpec } from '../lib/load-spec'
 import {

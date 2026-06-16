@@ -1,8 +1,8 @@
 import { createSignal, onMount, Show } from 'solid-js'
-import { AlertCircle } from 'lucide-solid'
+import { AlertCircle } from './icons'
 import { ApiDocument } from './components/ApiDocument'
-import { SpecInput } from './components/SpecInput'
-import { ThemeToggle } from './components/ThemeToggle'
+import { AppHeader } from './components/AppHeader'
+import { AuthProvider } from './lib/auth-context'
 import { loadSpecFromSwaggerUi } from './lib/load-spec'
 import type { LoadedSpec } from './lib/load-spec'
 import { readRoute, subscribeRoute, writeRoute } from './lib/router'
@@ -70,58 +70,46 @@ function App() {
   })
 
   return (
-    <div class="min-h-screen">
-      <header class="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/80">
-        <div class="mx-auto max-w-5xl space-y-4 px-4 py-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h1 class="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-                Better Swagger UI
-              </h1>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Paste a Swagger UI link — the OpenAPI spec is resolved automatically via dev proxy.
-              </p>
-            </div>
-            <ThemeToggle />
+    <AuthProvider loaded={loaded}>
+      <div class="min-h-screen">
+        <AppHeader
+          url={inputUrl()}
+          loading={loading()}
+          specLoaded={!!loaded()}
+          onUrlChange={setInputUrl}
+          onLoad={(url) => void handleLoad(url, null)}
+        />
+
+        <Show when={error()}>
+          <div class="mx-auto flex max-w-5xl items-start gap-2 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+            <AlertCircle size={16} class="mt-0.5 shrink-0" />
+            <p>{error()}</p>
           </div>
-          <SpecInput
-            url={inputUrl()}
-            loading={loading()}
-            onUrlChange={setInputUrl}
-            onLoad={(url) => void handleLoad(url, null)}
-          />
-        </div>
-      </header>
+        </Show>
 
-      <Show when={error()}>
-        <div class="mx-auto flex max-w-5xl items-start gap-2 px-4 py-4 text-sm text-rose-700 dark:text-rose-300">
-          <AlertCircle size={18} class="mt-0.5 shrink-0" />
-          <p>{error()}</p>
-        </div>
-      </Show>
+        <Show when={loaded()}>
+          {(spec) => (
+            <main class="mx-auto max-w-5xl px-4 py-4">
+              <ApiDocument
+                loaded={spec()}
+                expandedOp={expandedOp()}
+                scrollToOp={scrollToOp()}
+                tryItOutOp={tryItOutOp()}
+                onTryItOutDismiss={() => setTryItOutOp(null)}
+                onScrollToOpDone={() => setScrollToOp(null)}
+                onExpandedOpChange={handleExpandedOpChange}
+              />
+            </main>
+          )}
+        </Show>
 
-      <Show when={loaded()}>
-        {(spec) => (
-          <main class="mx-auto max-w-5xl px-4 py-6">
-            <ApiDocument
-              loaded={spec()}
-              expandedOp={expandedOp()}
-              scrollToOp={scrollToOp()}
-              tryItOutOp={tryItOutOp()}
-              onTryItOutDismiss={() => setTryItOutOp(null)}
-              onScrollToOpDone={() => setScrollToOp(null)}
-              onExpandedOpChange={handleExpandedOpChange}
-            />
-          </main>
-        )}
-      </Show>
-
-      <Show when={!loaded() && !loading() && !error()}>
-        <p class="px-4 py-10 text-center text-sm text-zinc-500">
-          Load a Swagger UI URL to get started.
-        </p>
-      </Show>
-    </div>
+        <Show when={!loaded() && !loading() && !error()}>
+          <p class="px-4 py-10 text-center text-sm text-zinc-500">
+            Paste a Swagger UI URL above to get started.
+          </p>
+        </Show>
+      </div>
+    </AuthProvider>
   )
 }
 
