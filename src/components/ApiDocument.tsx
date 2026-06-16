@@ -106,19 +106,19 @@ export function ApiDocument(props: ApiDocumentProps) {
         <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           {props.loaded.spec.info.title}
         </h2>
-        <Show when={props.loaded.spec.info.version}>
-          <p class="mt-1 text-sm text-zinc-500">v{props.loaded.spec.info.version}</p>
-        </Show>
-        <Show when={props.loaded.spec.info.description}>
-          <div class="mt-4 text-sm">
-            <MarkdownText content={props.loaded.spec.info.description} />
-          </div>
-        </Show>
-        <Show when={props.loaded.spec.servers?.[0]?.url}>
-          <p class="mt-3 font-mono text-sm text-zinc-500">
-            {props.loaded.spec.servers![0].url}
-          </p>
-        </Show>
+          <Show when={props.loaded.spec.info.version}>
+            <p class="mt-1 text-sm text-zinc-500">v{props.loaded.spec.info.version}</p>
+          </Show>
+          <Show when={props.loaded.spec.info.description}>
+            <div class="mt-4 text-sm">
+              <MarkdownText content={props.loaded.spec.info.description} />
+            </div>
+          </Show>
+          <Show when={props.loaded.spec.servers?.[0]?.url}>
+            <p class="mt-3 font-mono text-sm text-zinc-500">
+              {props.loaded.spec.servers![0].url}
+            </p>
+          </Show>
       </section>
 
       <div>

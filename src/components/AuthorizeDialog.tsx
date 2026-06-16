@@ -423,13 +423,14 @@ export function AuthorizeButton(props: { compact?: boolean }) {
   const auth = useAuth()
   const [open, setOpen] = createSignal(false)
   const authorizedCount = () => auth.entries().size
+  const label = () => (authorizedCount() > 0 ? 'Authorized' : 'Authorize')
 
   return (
     <Show when={auth.hasAnyScheme()}>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        title="Authorize"
+        title={label()}
         class={`inline-flex shrink-0 items-center rounded-md border font-medium transition ${
           props.compact ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 rounded-lg px-3 py-2 text-sm'
         } ${
@@ -439,7 +440,7 @@ export function AuthorizeButton(props: { compact?: boolean }) {
         }`}
       >
         <Lock size={props.compact ? 14 : 16} />
-        <span class={props.compact ? 'hidden md:inline' : ''}>Authorize</span>
+        <span class={props.compact ? 'hidden md:inline' : ''}>{label()}</span>
         <Show when={authorizedCount() > 0}>
           <span class="rounded-full bg-emerald-600/15 px-1 text-[10px] leading-none md:text-xs">
             {authorizedCount()}

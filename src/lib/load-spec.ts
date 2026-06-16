@@ -2,13 +2,21 @@ import type { OpenAPIV3 } from 'openapi-types'
 import type { InitOAuthConfig } from './auth-config'
 import { loadInitOAuth } from './auth-config'
 import { proxyFetchJson } from './proxy-fetch'
-import { resolveSpecUrl } from './resolve-spec-url'
+import {
+  discoverSpecDefinitions,
+  pickDefinition,
+  type SpecDefinition,
+} from './spec-definitions'
+
+export type { SpecDefinition }
 
 export interface LoadedSpec {
   spec: OpenAPIV3.Document
   specUrl: string
   sourceUrl: string
   oauthInit: InitOAuthConfig | null
+  definitions: SpecDefinition[]
+  selectedDefinition: string
 }
 
 function assertOpenApi(doc: unknown): asserts doc is OpenAPIV3.Document {
@@ -26,12 +34,31 @@ function assertOpenApi(doc: unknown): asserts doc is OpenAPIV3.Document {
   }
 }
 
-export async function loadSpecFromSwaggerUi(input: string): Promise<LoadedSpec> {
+export async function loadSpecDocument(specUrl: string): Promise<OpenAPIV3.Document> {
+  const raw = await proxyFetchJson(specUrl)
+  assertOpenApi(raw)
+  return raw
+}
+
+export async function loadSpecFromSwaggerUi(
+  input: string,
+  definitionName?: string | null,
+): Promise<LoadedSpec> {
   const trimmed = input.trim()
-  const specUrl = await resolveSpecUrl(trimmed)
+  let sourceUrl = trimmed
+  try {
+    const parsed = new URL(trimmed)
+    parsed.hash = ''
+    sourceUrl = parsed.href
+  } catch {
+    // keep trimmed input
+  }
+
+  const definitions = await discoverSpecDefinitions(trimmed)
+  const selected = pickDefinition(definitions, definitionName)
 
   const [raw, oauthInit] = await Promise.all([
-    proxyFetchJson(specUrl),
+    proxyFetchJson(selected.url),
     loadInitOAuth(trimmed),
   ])
 
@@ -39,8 +66,10 @@ export async function loadSpecFromSwaggerUi(input: string): Promise<LoadedSpec> 
 
   return {
     spec: raw,
-    specUrl,
-    sourceUrl: trimmed,
+    specUrl: selected.url,
+    sourceUrl,
     oauthInit,
+    definitions,
+    selectedDefinition: selected.name,
   }
 }

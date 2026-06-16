@@ -1,6 +1,7 @@
 export interface AppRoute {
   url: string | null
   op: string | null
+  definition: string | null
 }
 
 export function readRoute(): AppRoute {
@@ -8,6 +9,7 @@ export function readRoute(): AppRoute {
   return {
     url: params.get('url'),
     op: params.get('op'),
+    definition: params.get('definition'),
   }
 }
 
@@ -16,6 +18,10 @@ export function writeRoute(route: AppRoute) {
 
   if (route.url) {
     params.set('url', route.url)
+  }
+
+  if (route.definition) {
+    params.set('definition', route.definition)
   }
 
   if (route.op) {

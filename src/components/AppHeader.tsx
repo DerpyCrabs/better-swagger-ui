@@ -1,20 +1,44 @@
-import { LoaderCircle, Link2 } from '../icons'
 import { Show } from 'solid-js'
 import { AuthorizeButton } from './AuthorizeDialog'
+import { DefinitionSelector } from './DefinitionSelector'
 import { ThemeToggle } from './ThemeToggle'
+import type { SpecDefinition } from '../lib/spec-definitions'
 
 interface AppHeaderProps {
   url: string
-  loading: boolean
   specLoaded: boolean
+  definitions: SpecDefinition[]
+  selectedDefinition: string | null
   onUrlChange: (url: string) => void
   onLoad: (url: string) => void
+  onDefinitionChange?: (name: string) => void
+}
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim())
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export function AppHeader(props: AppHeaderProps) {
   const submit = (event: Event) => {
     event.preventDefault()
-    props.onLoad(props.url)
+    const trimmed = props.url.trim()
+    if (isValidHttpUrl(trimmed)) {
+      props.onLoad(trimmed)
+    }
+  }
+
+  const handlePaste = (event: ClipboardEvent) => {
+    const pasted = event.clipboardData?.getData('text').trim() ?? ''
+    if (!isValidHttpUrl(pasted)) return
+
+    event.preventDefault()
+    props.onUrlChange(pasted)
+    props.onLoad(pasted)
   }
 
   return (
@@ -24,31 +48,26 @@ export function AppHeader(props: AppHeaderProps) {
           Better Swagger UI
         </span>
 
-        <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2">
+        <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
           <div class="relative min-w-0 flex-1">
-            <Link2
-              size={14}
-              class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-            />
             <input
               type="url"
               required
               value={props.url}
               onInput={(event) => props.onUrlChange(event.currentTarget.value)}
+              onPaste={handlePaste}
               placeholder="Swagger UI URL"
-              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pr-2 pl-8 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
             />
           </div>
-          <button
-            type="submit"
-            disabled={props.loading}
-            class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Show when={props.loading}>
-              <LoaderCircle size={14} class="animate-spin" />
-            </Show>
-            Load
-          </button>
+
+          <Show when={props.definitions.length > 1}>
+            <DefinitionSelector
+              definitions={props.definitions}
+              selected={props.selectedDefinition ?? props.definitions[0]?.name ?? ''}
+              onChange={(name) => props.onDefinitionChange?.(name)}
+            />
+          </Show>
         </form>
 
         <div class="flex shrink-0 items-center gap-1.5">
