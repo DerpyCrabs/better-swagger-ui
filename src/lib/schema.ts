@@ -9,7 +9,8 @@ export interface SchemaProperty {
   type: string
   description?: string
   enum?: unknown[]
-  properties?: SchemaProperty[]
+  expandableName?: string
+  expandableSchema?: SchemaObject | ReferenceObject
 }
 
 export interface MediaSchemaInfo {
@@ -108,6 +109,45 @@ export function schemaTypeLabel(
   return resolved.type ?? 'object'
 }
 
+function getExpandableInfo(
+  spec: OpenAPIV3.Document,
+  propertySchema: SchemaObject | ReferenceObject,
+): Pick<SchemaProperty, 'expandableName' | 'expandableSchema'> {
+  if (isReference(propertySchema)) {
+    if (!resolveRef(spec, propertySchema.$ref)) return {}
+    return {
+      expandableName: refName(propertySchema.$ref),
+      expandableSchema: propertySchema,
+    }
+  }
+
+  const resolved = resolveSchema(spec, propertySchema)
+  if (!resolved) return {}
+
+  if (resolved.type === 'array' && resolved.items) {
+    return {
+      expandableName: isReference(resolved.items)
+        ? refName(resolved.items.$ref)
+        : schemaTypeLabel(spec, resolved.items),
+      expandableSchema: resolved.items,
+    }
+  }
+
+  if (
+    resolved.properties ||
+    resolved.allOf?.length ||
+    resolved.oneOf?.length ||
+    resolved.anyOf?.length
+  ) {
+    return {
+      expandableName: resolved.type === 'object' || resolved.properties ? 'object' : schemaTypeLabel(spec, propertySchema),
+      expandableSchema: propertySchema,
+    }
+  }
+
+  return {}
+}
+
 export function schemaProperties(
   spec: OpenAPIV3.Document,
   schema: SchemaObject | ReferenceObject | undefined,
@@ -126,18 +166,13 @@ export function schemaProperties(
       ? refName(propertySchema.$ref)
       : schemaTypeLabel(spec, propertySchema)
 
-    const properties =
-      nested?.properties && Object.keys(nested.properties).length > 0
-        ? schemaProperties(spec, nested, childVisited)
-        : undefined
-
     return {
       name,
       required: required.has(name),
       type,
       description: !isReference(propertySchema) ? propertySchema.description : nested?.description,
       enum: !isReference(propertySchema) ? propertySchema.enum : nested?.enum,
-      properties,
+      ...getExpandableInfo(spec, propertySchema),
     }
   })
 }

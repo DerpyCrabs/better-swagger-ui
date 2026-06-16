@@ -431,7 +431,7 @@ export function OperationBlock(props: OperationBlockProps) {
           </Show>
 
           <Show when={requestBodyInfo()}>
-            {(info) => <RequestBodySchemaView info={info()} />}
+            {(info) => <RequestBodySchemaView spec={props.spec} info={info()} />}
           </Show>
 
           <Show when={tryItOut()}>
@@ -484,7 +484,7 @@ export function OperationBlock(props: OperationBlockProps) {
             )}
           </Show>
 
-          <ResponsesSchemaView responses={responseSchemas()} />
+          <ResponsesSchemaView spec={props.spec} responses={responseSchemas()} />
         </div>
       </Show>
     </div>

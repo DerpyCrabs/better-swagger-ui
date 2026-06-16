@@ -1,9 +1,11 @@
 import { For, Show } from 'solid-js'
+import type { OpenAPIV3 } from 'openapi-types'
 import type { MediaSchemaInfo, RequestBodySchemaInfo, ResponseSchemaInfo } from '../lib/schema'
 import { SchemaModel } from './SchemaModel'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 
 interface SchemaSectionProps {
+  spec: OpenAPIV3.Document
   title: string
   media: MediaSchemaInfo
   description?: string
@@ -31,13 +33,14 @@ function SchemaSection(props: SchemaSectionProps) {
           </Show>
         }
       >
-        <SchemaModel properties={props.media.properties} />
+        <SchemaModel spec={props.spec} properties={props.media.properties} />
       </Show>
     </div>
   )
 }
 
 interface RequestBodySchemaViewProps {
+  spec: OpenAPIV3.Document
   info: RequestBodySchemaInfo
 }
 
@@ -56,13 +59,14 @@ export function RequestBodySchemaView(props: RequestBodySchemaViewProps) {
         <p class="text-xs text-zinc-600 dark:text-zinc-400">{props.info.description}</p>
       </Show>
       <For each={props.info.media}>
-        {(media) => <SchemaSection title="Request body" media={media} />}
+        {(media) => <SchemaSection spec={props.spec} title="Request body" media={media} />}
       </For>
     </section>
   )
 }
 
 interface ResponsesSchemaViewProps {
+  spec: OpenAPIV3.Document
   responses: ResponseSchemaInfo[]
 }
 
@@ -100,6 +104,7 @@ export function ResponsesSchemaView(props: ResponsesSchemaViewProps) {
                   <For each={response.media}>
                     {(media) => (
                       <SchemaSection
+                        spec={props.spec}
                         title={`Response ${response.status}`}
                         media={media}
                       />
