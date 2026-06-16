@@ -16,6 +16,7 @@ function App() {
   const [loaded, setLoaded] = createSignal<LoadedSpec | null>(null)
   const [expandedOp, setExpandedOp] = createSignal<string | null>(initialRoute.op)
   const [scrollToOp, setScrollToOp] = createSignal<string | null>(initialRoute.op)
+  const [tryItOutOp, setTryItOutOp] = createSignal<string | null>(initialRoute.op)
 
   const syncRoute = (url: string, op: string | null) => {
     writeRoute({ url, op })
@@ -28,6 +29,7 @@ function App() {
     setLoaded(null)
     setExpandedOp(op)
     setScrollToOp(op)
+    setTryItOutOp(op)
     setInputUrl(trimmed)
     syncRoute(trimmed, op)
 
@@ -43,6 +45,7 @@ function App() {
 
   const handleExpandedOpChange = (op: string | null) => {
     setExpandedOp(op)
+    setTryItOutOp(null)
     syncRoute(inputUrl(), op)
   }
 
@@ -62,6 +65,7 @@ function App() {
 
       setExpandedOp(next.op)
       setScrollToOp(next.op)
+      setTryItOutOp(next.op)
     })
   })
 
@@ -103,6 +107,8 @@ function App() {
               loaded={spec()}
               expandedOp={expandedOp()}
               scrollToOp={scrollToOp()}
+              tryItOutOp={tryItOutOp()}
+              onTryItOutDismiss={() => setTryItOutOp(null)}
               onScrollToOpDone={() => setScrollToOp(null)}
               onExpandedOpChange={handleExpandedOpChange}
             />

@@ -1,17 +1,27 @@
-import { For, Show, createEffect, createSignal } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
 import type { OpenAPIV3 } from 'openapi-types'
 import { ChevronDown, ChevronUp, LoaderCircle, Lock, Play } from 'lucide-solid'
 import type { OperationItem } from '../lib/operations'
 import { methodColor } from '../lib/operations'
+import {
+  getRequestBodySchema,
+  getResponseSchemas,
+  primaryJsonMedia,
+  schemaTypeLabel,
+} from '../lib/schema'
 import { MarkdownText } from './MarkdownText'
+import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 
 interface OperationBlockProps {
   item: OperationItem
+  spec: OpenAPIV3.Document
   serverUrl: string
   specUrl: string
   secured: boolean
   expanded: boolean
+  autoTryItOut: boolean
+  onTryItOutDismiss: () => void
   onToggle: () => void
 }
 
@@ -99,17 +109,44 @@ export function OperationBlock(props: OperationBlockProps) {
   const [error, setError] = createSignal<string | null>(null)
   const [result, setResult] = createSignal<TryItResult | null>(null)
 
+  const requestBodyInfo = createMemo(() =>
+    getRequestBodySchema(props.spec, props.item.operation.requestBody),
+  )
+  const responseSchemas = createMemo(() =>
+    getResponseSchemas(props.spec, props.item.operation.responses),
+  )
+  const primaryBodyMedia = createMemo(() => {
+    const info = requestBodyInfo()
+    return info ? primaryJsonMedia(info) : null
+  })
+
+  const defaultBodyText = () => {
+    const example = primaryBodyMedia()?.example
+    if (example === undefined || example === null) return '{}'
+    return JSON.stringify(example, null, 2)
+  }
+
+  const bodyTypeLabel = () => {
+    const media = primaryBodyMedia()
+    if (media?.schemaName) return media.schemaName
+    const schema = props.item.operation.requestBody
+    if (schema && !('$ref' in schema)) {
+      const content = Object.values(schema.content)[0]
+      if (content?.schema) return schemaTypeLabel(props.spec, content.schema)
+    }
+    return 'object'
+  }
+
   createEffect(() => {
     props.item.id
-    setTryItOut(false)
     setParams(resolveParameters(props.item).map((param) => ({ ...param, value: '' })))
-    setBody('{}')
+    setBody(defaultBodyText())
     setError(null)
     setResult(null)
   })
 
   createEffect(() => {
-    if (!props.expanded) setTryItOut(false)
+    setTryItOut(props.expanded && props.autoTryItOut)
   })
 
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
@@ -123,9 +160,10 @@ export function OperationBlock(props: OperationBlockProps) {
   const cancelTryItOut = () => {
     setTryItOut(false)
     setParams(resolveParameters(props.item).map((param) => ({ ...param, value: '' })))
-    setBody('{}')
+    setBody(defaultBodyText())
     setError(null)
     setResult(null)
+    props.onTryItOutDismiss()
   }
 
   const execute = async () => {
@@ -324,7 +362,7 @@ export function OperationBlock(props: OperationBlockProps) {
                       <td class="py-1.5 pr-3">
                         <div class="font-semibold text-zinc-900 dark:text-zinc-100">body</div>
                         <div class="mt-px font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
-                          object
+                          {bodyTypeLabel()}
                           <span class="text-zinc-500 dark:text-zinc-500"> · body</span>
                         </div>
                       </td>
@@ -345,6 +383,12 @@ export function OperationBlock(props: OperationBlockProps) {
               </table>
             </div>
           </Show>
+
+          <Show when={requestBodyInfo()}>
+            {(info) => <RequestBodySchemaView info={info()} />}
+          </Show>
+
+          <ResponsesSchemaView responses={responseSchemas()} />
 
           <Show when={tryItOut()}>
             <div class="mt-2 border-t border-zinc-300 pt-2 dark:border-zinc-700">

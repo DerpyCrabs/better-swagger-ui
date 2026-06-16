@@ -16,6 +16,8 @@ interface ApiDocumentProps {
   loaded: LoadedSpec
   expandedOp: string | null
   scrollToOp: string | null
+  tryItOutOp: string | null
+  onTryItOutDismiss: () => void
   onScrollToOpDone: () => void
   onExpandedOpChange: (op: string | null) => void
 }
@@ -147,10 +149,13 @@ export function ApiDocument(props: ApiDocumentProps) {
                       {(item) => (
                         <OperationBlock
                           item={item}
+                          spec={props.loaded.spec}
                           serverUrl={serverUrl()}
                           specUrl={props.loaded.specUrl}
                           secured={isOperationSecured(props.loaded.spec, item.operation)}
                           expanded={props.expandedOp === item.id}
+                          autoTryItOut={props.tryItOutOp === item.id}
+                          onTryItOutDismiss={props.onTryItOutDismiss}
                           onToggle={() => toggleOperation(item)}
                         />
                       )}
