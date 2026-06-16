@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show } from 'solid-js'
+import { createEffect, createSignal, onMount, Show } from 'solid-js'
 import { AlertCircle } from './icons'
 import { ApiDocument } from './components/ApiDocument'
 import { AppHeader } from './components/AppHeader'
@@ -18,6 +18,14 @@ function normalizeSourceUrl(url: string): string {
   }
 }
 
+function domainFromUrl(url: string): string | null {
+  try {
+    return new URL(url.trim()).hostname
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const initialRoute = readRoute()
 
@@ -32,6 +40,11 @@ function App() {
   const [tryItOutOp, setTryItOutOp] = createSignal<string | null>(initialRoute.op)
 
   let loadSeq = 0
+
+  createEffect(() => {
+    const domain = domainFromUrl(inputUrl())
+    document.title = domain ?? 'Better Swagger UI'
+  })
 
   const syncRoute = (url: string, op: string | null, nextDefinition: string | null) => {
     writeRoute({ url, op, definition: nextDefinition })
