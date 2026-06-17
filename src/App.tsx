@@ -1,5 +1,5 @@
 import { createEffect, createSignal, onMount, Show } from 'solid-js'
-import { AlertCircle } from './icons'
+import { AlertCircle, LoaderCircle } from './icons'
 import { ApiDocument } from './components/ApiDocument'
 import { AppHeader } from './components/AppHeader'
 import { AuthProvider } from './lib/auth-context'
@@ -235,6 +235,7 @@ function App() {
       <div class="min-h-screen">
         <AppHeader
           url={inputUrl()}
+          loading={loading()}
           specLoaded={!!loaded()}
           definitions={definitions()}
           selectedDefinition={definition()}
@@ -266,6 +267,16 @@ function App() {
               />
             </main>
           )}
+        </Show>
+
+        <Show when={loading() && !loaded()}>
+          <div
+            class="flex items-center justify-center gap-2 px-4 py-10 text-sm text-zinc-500 dark:text-dm-muted"
+            data-testid="spec-loading-message"
+          >
+            <LoaderCircle size={16} class="animate-spin shrink-0" />
+            <span>Loading spec from URL…</span>
+          </div>
         </Show>
 
         <Show when={!loaded() && !loading() && !error()}>

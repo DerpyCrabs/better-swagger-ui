@@ -1,5 +1,5 @@
 import { Show } from 'solid-js'
-import { Upload } from '../icons'
+import { LoaderCircle, Upload } from '../icons'
 import { looksLikeSpecText } from '../lib/parse-spec'
 import type { SpecDefinition } from '../lib/spec-definitions'
 import { AuthorizeButton } from './AuthorizeDialog'
@@ -8,6 +8,7 @@ import { ThemeToggle } from './ThemeToggle'
 
 interface AppHeaderProps {
   url: string
+  loading?: boolean
   specLoaded: boolean
   definitions: SpecDefinition[]
   selectedDefinition: string | null
@@ -84,8 +85,22 @@ export function AppHeader(props: AppHeaderProps) {
               onInput={(event) => props.onUrlChange(event.currentTarget.value)}
               onPaste={handlePaste}
               placeholder="Swagger UI URL or paste YAML/JSON"
-              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-9 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
+              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
+              classList={{
+                'pr-16': props.loading || !!props.onLoadContent,
+                'pr-3': !props.loading && !props.onLoadContent,
+              }}
             />
+
+            <Show when={props.loading}>
+              <span
+                class="pointer-events-none absolute inset-y-0 right-9 inline-flex items-center px-2 text-zinc-400 dark:text-dm-muted"
+                data-testid="spec-loading"
+                aria-label="Loading spec"
+              >
+                <LoaderCircle size={16} class="animate-spin" />
+              </span>
+            </Show>
 
             <Show when={props.onLoadContent}>
               <>
