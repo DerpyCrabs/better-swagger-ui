@@ -23,7 +23,24 @@ interface ApiDocumentProps {
   onExpandAndTryItOut: (op: string) => void
 }
 
+function stickyHeaderHeight(): number {
+  return document.querySelector('header')?.getBoundingClientRect().height ?? 0
+}
+
+function isOperationHeaderVisible(opId: string): boolean {
+  const el = document.querySelector(`[data-op-id="${CSS.escape(opId)}"]`)
+  if (!el) return false
+
+  const headerEl = el.querySelector('[data-op-header]') ?? el
+  const rect = headerEl.getBoundingClientRect()
+  const topInset = stickyHeaderHeight()
+
+  return rect.bottom > topInset && rect.top < window.innerHeight
+}
+
 function scrollToOperation(opId: string, smooth = false) {
+  if (isOperationHeaderVisible(opId)) return
+
   const el = document.querySelector(`[data-op-id="${CSS.escape(opId)}"]`)
   el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'start' })
 }
@@ -99,14 +116,14 @@ export function ApiDocument(props: ApiDocumentProps) {
 
   return (
     <div>
-      <section class="mb-6 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+      <section class="mb-6 border-b border-zinc-200 pb-6 dark:border-dm-border">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
-            <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50" data-testid="api-title">
+            <h2 class="text-2xl font-semibold text-zinc-900 dark:text-dm-text" data-testid="api-title">
               {props.loaded.spec.info.title}
             </h2>
             <Show when={props.loaded.spec.info.version}>
-              <p class="mt-1 text-sm text-zinc-500">v{props.loaded.spec.info.version}</p>
+              <p class="mt-1 text-sm text-zinc-500 dark:text-dm-muted">v{props.loaded.spec.info.version}</p>
             </Show>
           </div>
           <SpecSchemaActions spec={props.loaded.spec} specUrl={props.loaded.specUrl} />
@@ -117,7 +134,7 @@ export function ApiDocument(props: ApiDocumentProps) {
             </div>
           </Show>
           <Show when={props.loaded.spec.servers?.[0]?.url}>
-            <p class="mt-3 font-mono text-sm text-zinc-500">
+            <p class="mt-3 font-mono text-sm text-zinc-500 dark:text-dm-muted">
               {props.loaded.spec.servers![0].url}
             </p>
           </Show>
@@ -130,23 +147,23 @@ export function ApiDocument(props: ApiDocumentProps) {
             const description = () => descriptions().get(tag)
 
             return (
-              <section class="border-b border-zinc-200 dark:border-zinc-800" data-testid={`tag-section-${tag}`}>
+              <section class="border-b border-zinc-200 dark:border-dm-border" data-testid={`tag-section-${tag}`}>
                 <button
                   type="button"
-                  class="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
+                  class="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-zinc-50 dark:bg-dm-surface dark:hover:bg-dm-surface-hover"
                   onClick={() => toggleTag(tag)}
                 >
-                  <span class="text-lg font-medium text-zinc-900 dark:text-zinc-100">{tag}</span>
+                  <span class="text-lg font-medium text-zinc-900 dark:text-dm-text">{tag}</span>
                   <Show when={description()}>
-                    <span class="flex-1 truncate text-sm text-zinc-500">{description()}</span>
+                    <span class="flex-1 truncate text-sm text-zinc-500 dark:text-dm-muted">{description()}</span>
                   </Show>
-                  <span class="ml-auto shrink-0 text-zinc-400 dark:text-zinc-500">
+                  <span class="ml-auto shrink-0 text-zinc-400 dark:text-dm-muted">
                     {isOpen() ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </span>
                 </button>
 
                 <Show when={isOpen()}>
-                  <div class="border-t border-zinc-200 dark:border-zinc-800">
+                  <div class="space-y-0 border-t border-zinc-200 p-2 dark:border-t-dm-border">
                     <For each={operations}>
                       {(item) => (
                         <OperationBlock

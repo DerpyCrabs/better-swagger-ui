@@ -3,7 +3,7 @@ import { createStore, reconcile } from 'solid-js/store'
 import type { OpenAPIV3 } from 'openapi-types'
 import { ChevronDown, ChevronUp, Download, LoaderCircle, Lock, Play } from '../icons'
 import type { OperationItem } from '../lib/operations'
-import { methodColor } from '../lib/operations'
+import { methodColor, methodExpandedBg, methodHeaderBg } from '../lib/operations'
 import {
   getRequestBodySchema,
   getResponseSchemas,
@@ -12,7 +12,7 @@ import {
 } from '../lib/schema'
 import { MarkdownText } from './MarkdownText'
 import { ParamInput } from './ParamInput'
-import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
+import { RequestBodyPanel, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 import { CopyButton } from './CopyButton'
 import { AuthorizeDialog } from './AuthorizeDialog'
@@ -28,6 +28,16 @@ import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
 import { buildAcceptHeader } from '../lib/accept-header'
 import { buildUrl } from '../lib/build-request-url'
 import { proxyFetch } from '../lib/proxy-fetch'
+import {
+  dmBorder,
+  dmBorderT,
+  dmMuted,
+  dmParamName,
+  dmParamType,
+  dmPath,
+  dmSchemaPanel,
+  dmSectionHeading,
+} from '../lib/dm-classes'
 
 interface OperationBlockProps {
   item: OperationItem
@@ -125,6 +135,18 @@ export function OperationBlock(props: OperationBlockProps) {
   })
 
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
+  const hasJsonRequestBody = createMemo(() => {
+    const info = requestBodyInfo()
+    return Boolean(info && primaryBodyMedia())
+  })
+
+  const exampleBodyData = createMemo(() => {
+    try {
+      return JSON.parse(defaultBodyText())
+    } catch {
+      return defaultBodyText()
+    }
+  })
 
   const clearParamError = (name: string) => {
     if (!paramErrors[name]) return
@@ -254,16 +276,19 @@ export function OperationBlock(props: OperationBlockProps) {
     <div
       data-op-id={props.item.id}
       data-testid={`operation-${props.item.id}`}
-      class="scroll-mt-24 border-b border-zinc-200 last:border-b-0 dark:border-zinc-800"
+      class={`scroll-mt-24 mb-[10px] overflow-hidden rounded border ${dmBorder}`}
     >
       <div
-        class={`flex w-full items-stretch transition hover:bg-zinc-100 dark:hover:bg-zinc-900/60 ${
-          props.expanded ? 'bg-zinc-50 dark:bg-zinc-900/40' : ''
+        data-op-header
+        class={`flex w-full items-stretch transition ${methodHeaderBg(props.item.method, props.expanded)} ${
+          props.expanded
+            ? 'border-b border-zinc-300/70 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)] dark:border-dm-border dark:shadow-none'
+            : ''
         }`}
       >
         <button
           type="button"
-          class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left"
+          class="flex min-w-0 flex-1 flex-nowrap items-center gap-2.5 px-3 py-2 text-left sm:gap-3"
           onClick={props.onToggle}
         >
           <span
@@ -271,13 +296,18 @@ export function OperationBlock(props: OperationBlockProps) {
           >
             {props.item.method}
           </span>
-          <span class="min-w-0 flex-1">
-            <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{props.item.path}</span>
-            <Show when={summary()}>
-              <span class="ml-2 text-sm text-zinc-500">{summary()}</span>
-            </Show>
+          <span class={`shrink-0 whitespace-nowrap ${dmPath}`}>
+            {props.item.path}
           </span>
-          <span class="shrink-0 text-zinc-400 dark:text-zinc-500">
+          <Show when={summary()}>
+            <span
+              class={`min-w-0 flex-1 truncate text-sm ${dmMuted}`}
+              title={summary()}
+            >
+              {summary()}
+            </span>
+          </Show>
+          <span class="ml-auto shrink-0 text-zinc-400 dark:text-dm-muted">
             {props.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </span>
         </button>
@@ -288,7 +318,7 @@ export function OperationBlock(props: OperationBlockProps) {
             title="Authorize"
             aria-label="Authorize"
             onClick={() => setAuthorizeOpen(true)}
-            class="shrink-0 px-2.5 text-zinc-400 transition hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+            class="shrink-0 px-2.5 text-zinc-400 transition hover:text-zinc-700 dark:text-dm-muted dark:hover:text-dm-text"
           >
             <Lock size={15} />
           </button>
@@ -301,15 +331,15 @@ export function OperationBlock(props: OperationBlockProps) {
       />
 
       <Show when={props.expanded}>
-        <div class="border-t border-zinc-300 bg-zinc-100/80 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+        <div class={`px-3 py-3 ${methodExpandedBg(props.item.method)}`}>
           <Show when={props.item.operation.description && props.item.operation.summary}>
-            <div class="mb-2 border-b border-zinc-300 pb-2 text-sm dark:border-zinc-700">
+            <div class="mb-2 text-sm">
               <MarkdownText content={props.item.operation.description} />
             </div>
           </Show>
 
-          <div class="mb-1.5 flex items-center justify-between border-b-2 border-zinc-800 pb-1 dark:border-zinc-300">
-            <span class="text-xs font-bold tracking-wide text-zinc-900 uppercase dark:text-zinc-100">
+          <div class="mb-1 flex items-center justify-between">
+            <span class={dmSectionHeading}>
               Parameters
             </span>
             <Show
@@ -318,7 +348,7 @@ export function OperationBlock(props: OperationBlockProps) {
                 <button
                   type="button"
                   data-testid="try-it-out"
-                  class="rounded border border-zinc-400 px-2.5 py-0.5 text-xs font-semibold text-zinc-800 hover:bg-white dark:border-zinc-500 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  class="rounded-md border border-zinc-300 bg-white px-3 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-surface dark:text-dm-text dark:hover:bg-dm-surface-hover"
                   onClick={(event) => {
                     event.stopPropagation()
                     setTryItOut(true)
@@ -331,7 +361,7 @@ export function OperationBlock(props: OperationBlockProps) {
               <button
                 type="button"
                 data-testid="cancel-try-it-out"
-                class="rounded border border-rose-500 px-2.5 py-0.5 text-xs font-semibold text-rose-600 hover:bg-white dark:border-rose-600 dark:text-rose-400 dark:hover:bg-zinc-800"
+                class="rounded-md border border-zinc-300 bg-transparent px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-white/80 dark:border-dm-border dark:text-dm-muted dark:hover:bg-dm-surface-hover"
                 onClick={(event) => {
                   event.stopPropagation()
                   cancelTryItOut()
@@ -343,53 +373,54 @@ export function OperationBlock(props: OperationBlockProps) {
           </div>
 
           <Show
-            when={paramDefs().length > 0 || hasRequestBody()}
-            fallback={<p class="py-1 text-xs text-zinc-600 dark:text-zinc-400">No parameters</p>}
+            when={paramDefs().length > 0 || (hasRequestBody() && !hasJsonRequestBody())}
+            fallback={
+              <Show when={!hasJsonRequestBody()}>
+                <p class={`py-1 text-xs ${dmMuted}`}>No parameters</p>
+              </Show>
+            }
           >
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto rounded-md bg-white/70 dark:bg-dm-surface">
               <table class="w-full border-collapse text-[13px]">
                 <thead>
-                  <tr class="text-left text-zinc-700 dark:text-zinc-300">
-                    <th class="w-[26%] py-1 pr-3 text-xs font-semibold">Name</th>
-                    <th class="py-1 text-xs font-semibold">Description</th>
+                  <tr class="text-left text-zinc-700 dark:text-dm-muted">
+                    <th class="w-[26%] px-2 py-1.5 text-xs font-semibold">Name</th>
+                    <th class="px-2 py-1.5 text-xs font-semibold">Description</th>
                   </tr>
                 </thead>
                 <tbody>
                   <For each={paramDefs()}>
                     {(param) => (
-                      <tr class="border-t border-zinc-300 align-top dark:border-zinc-700">
-                        <td class="py-1.5 pr-3">
-                          <div class="font-semibold text-zinc-900 dark:text-zinc-100">
+                      <tr class={`${dmBorderT} align-top`}>
+                        <td class="px-2 py-2 pr-3">
+                          <div class={dmParamName}>
                             {param.name}
                             {param.required ? (
                               <span class="text-rose-600 dark:text-rose-400"> *</span>
                             ) : null}
                           </div>
-                          <div class="mt-px font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
-                            {param.schemaType}
+                          <div class={`mt-0.5 text-[11px] leading-snug ${dmParamType}`}>
+                            <span class="font-mono">{param.schemaType}</span>
                             <Show when={param.enumValues?.length}>
-                              <span class="text-zinc-500 dark:text-zinc-500">
-                                {' '}
-                                ({param.enumValues!.join(' | ')})
-                              </span>
+                              <span> ({param.enumValues!.join(' | ')})</span>
                             </Show>
-                            <span class="text-zinc-500 dark:text-zinc-500"> · {param.in}</span>
                           </div>
+                          <div class={`mt-px text-[10px] ${dmMuted}`}>{param.in}</div>
                         </td>
-                        <td class="py-1.5">
+                        <td class="px-2 py-2">
                           <Show
                             when={tryItOut()}
                             fallback={
                               <Show
                                 when={param.description}
-                                fallback={<span class="text-zinc-500 dark:text-zinc-500">—</span>}
+                                fallback={<span class={dmMuted}>—</span>}
                               >
-                                <p class="text-zinc-700 dark:text-zinc-300">{param.description}</p>
+                                <p class="text-zinc-700 dark:text-dm-muted">{param.description}</p>
                               </Show>
                             }
                           >
                             <Show when={param.description}>
-                              <p class="mb-0.5 text-[11px] leading-tight text-zinc-600 dark:text-zinc-400">
+                              <p class={`mb-1 text-[11px] leading-tight ${dmMuted}`}>
                                 {param.description}
                               </p>
                             </Show>
@@ -406,17 +437,17 @@ export function OperationBlock(props: OperationBlockProps) {
                     )}
                   </For>
 
-                  <Show when={hasRequestBody()}>
-                    <tr class="border-t border-zinc-300 align-top dark:border-zinc-700">
-                      <td class="py-1.5 pr-3">
-                        <div class="font-semibold text-zinc-900 dark:text-zinc-100">body</div>
-                        <div class="mt-px font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
-                          {bodyTypeLabel()}
-                          <span class="text-zinc-500 dark:text-zinc-500"> · body</span>
+                  <Show when={hasRequestBody() && !hasJsonRequestBody()}>
+                    <tr class={`${dmBorderT} align-top`}>
+                      <td class="px-2 py-2 pr-3">
+                        <div class={dmParamName}>body</div>
+                        <div class={`mt-0.5 text-[11px] leading-snug ${dmParamType}`}>
+                          <span class="font-mono">{bodyTypeLabel()}</span>
                         </div>
+                        <div class={`mt-px text-[10px] ${dmMuted}`}>body</div>
                       </td>
-                      <td class="py-1.5">
-                        <Show when={tryItOut()} fallback={<span class="text-zinc-500 dark:text-zinc-500">—</span>}>
+                      <td class="px-2 py-2">
+                        <Show when={tryItOut()} fallback={<span class={dmMuted}>—</span>}>
                           <div class="space-y-0.5">
                             <div class="flex max-w-lg items-start gap-2">
                               <textarea
@@ -435,10 +466,10 @@ export function OperationBlock(props: OperationBlockProps) {
                                     setBodyError('Request body must be valid JSON')
                                   }
                                 }}
-                                class={`min-w-0 flex-1 rounded border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-1 dark:bg-zinc-950 dark:text-zinc-100 ${
+                                class={`min-w-0 flex-1 rounded-md border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-2 dark:border-dm-border dark:bg-dm-input dark:text-dm-text ${
                                   bodyError()
-                                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50 dark:border-rose-500'
-                                    : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:border-zinc-600'
+                                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30 dark:border-rose-500'
+                                    : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
                                 }`}
                               />
                               <CopyButton text={body} label="Copy" class="shrink-0" />
@@ -456,12 +487,51 @@ export function OperationBlock(props: OperationBlockProps) {
             </div>
           </Show>
 
-          <Show when={requestBodyInfo()}>
-            {(info) => <RequestBodySchemaView spec={props.spec} info={info()} />}
+          <Show when={hasJsonRequestBody() && requestBodyInfo()}>
+            {(info) => (
+              <RequestBodyPanel
+                spec={props.spec}
+                info={info()}
+                tryItOut={tryItOut()}
+                exampleViewer={<VirtualJsonViewer data={exampleBodyData()} maxHeight="16rem" />}
+                editor={
+                  <div class="space-y-0.5">
+                    <div class="flex max-w-lg items-start gap-2">
+                      <textarea
+                        rows={6}
+                        value={body()}
+                        onClick={(event) => event.stopPropagation()}
+                        onInput={(event) => {
+                          setBody(event.currentTarget.value)
+                          if (bodyError()) setBodyError(null)
+                        }}
+                        onBlur={() => {
+                          try {
+                            JSON.parse(body())
+                            setBodyError(null)
+                          } catch {
+                            setBodyError('Request body must be valid JSON')
+                          }
+                        }}
+                        class={`min-w-0 flex-1 rounded-md border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-2 dark:border-dm-border dark:bg-dm-input dark:text-dm-text ${
+                          bodyError()
+                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30 dark:border-rose-500'
+                            : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
+                        }`}
+                      />
+                      <CopyButton text={body} label="Copy" class="shrink-0" />
+                    </div>
+                    <Show when={bodyError()}>
+                      <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+                    </Show>
+                  </div>
+                }
+              />
+            )}
           </Show>
 
           <Show when={tryItOut()}>
-            <div class="mt-2 border-t border-zinc-300 pt-2 dark:border-zinc-700">
+            <div class="mt-2">
               <button
                 type="button"
                 data-testid="execute"
@@ -470,7 +540,7 @@ export function OperationBlock(props: OperationBlockProps) {
                   event.stopPropagation()
                   void execute()
                 }}
-                class="inline-flex items-center gap-1.5 rounded bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
               >
                 {loading() ? (
                   <LoaderCircle size={16} class="animate-spin" />
@@ -483,16 +553,16 @@ export function OperationBlock(props: OperationBlockProps) {
           </Show>
 
           <Show when={error()}>
-            <p class="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+            <p class="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
               {error()}
             </p>
           </Show>
 
           <Show when={result()}>
             {(res) => (
-              <div class="mt-2 space-y-1.5 border-t border-zinc-300 pt-2 dark:border-zinc-700">
+              <div class={`mt-2 space-y-1.5 ${dmSchemaPanel}`}>
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div class="text-xs font-bold tracking-wide text-zinc-900 uppercase dark:text-zinc-100">
+                  <div class={dmSectionHeading}>
                     Response
                   </div>
                   <div class="flex items-center gap-2">
@@ -506,7 +576,7 @@ export function OperationBlock(props: OperationBlockProps) {
                           event.stopPropagation()
                           downloadFile(res())
                         }}
-                        class="inline-flex items-center rounded border border-zinc-400 p-1 text-zinc-700 hover:bg-white dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                        class="inline-flex items-center rounded border border-zinc-400 p-1 text-zinc-700 hover:bg-white dark:border-dm-border dark:text-dm-text dark:hover:bg-dm-surface-hover"
                       >
                         <Download size={12} />
                       </button>
@@ -521,15 +591,15 @@ export function OperationBlock(props: OperationBlockProps) {
                     data-testid="response-status"
                     class={`rounded px-2 py-0.5 font-medium ${
                       res().status >= 200 && res().status < 300
-                        ? 'bg-emerald-600/20 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-rose-600/20 text-rose-600 dark:text-rose-400'
+                        ? 'bg-emerald-600/20 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-rose-600/20 text-rose-700 dark:text-rose-400'
                     }`}
                   >
                     {res().status} {res().statusText}
                   </span>
-                  <span class="text-zinc-500">{res().durationMs} ms</span>
+                  <span class={dmMuted}>{res().durationMs} ms</span>
                   <Show when={res().contentType}>
-                    <span class="font-mono text-xs text-zinc-500">{res().contentType}</span>
+                    <span class={`font-mono text-xs ${dmMuted}`}>{res().contentType}</span>
                   </Show>
                 </div>
                 <div data-testid="response-body">
@@ -537,12 +607,12 @@ export function OperationBlock(props: OperationBlockProps) {
                   when={res().isFile}
                   fallback={<VirtualJsonViewer data={res().body} maxHeight="32rem" />}
                 >
-                  <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900/80">
-                    <p class="text-zinc-700 dark:text-zinc-300">
+                  <div class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-dm-surface">
+                    <p class="text-zinc-700 dark:text-dm-text">
                       File response
                       <Show when={res().fileName}>
                         {(name) => (
-                          <span class="ml-1 font-mono text-zinc-600 dark:text-zinc-400">({name()})</span>
+                          <span class={`ml-1 font-mono ${dmMuted}`}>({name()})</span>
                         )}
                       </Show>
                     </p>
@@ -551,7 +621,7 @@ export function OperationBlock(props: OperationBlockProps) {
                         <img
                           src={previewUrl()}
                           alt={res().fileName ?? 'Response image'}
-                          class="mt-2 max-h-64 max-w-full rounded border border-zinc-200 dark:border-zinc-700"
+                          class="mt-2 max-h-64 max-w-full rounded border border-zinc-200 dark:border-dm-border"
                         />
                       )}
                     </Show>

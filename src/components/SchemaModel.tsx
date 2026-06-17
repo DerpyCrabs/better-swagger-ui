@@ -6,6 +6,7 @@ interface SchemaModelProps {
   spec: OpenAPIV3.Document
   properties: SchemaProperty[]
   depth?: number
+  plain?: boolean
 }
 
 function TypeLabel(props: {
@@ -60,6 +61,7 @@ function PropertyRow(props: {
   spec: OpenAPIV3.Document
   property: SchemaProperty
   depth: number
+  plain?: boolean
 }) {
   const [expanded, setExpanded] = createSignal(false)
   const nameIndent = () => `calc(0.5rem + ${props.depth * 1.25}rem)`
@@ -72,9 +74,15 @@ function PropertyRow(props: {
 
   return (
     <>
-      <div class="grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 border-t border-zinc-300 py-1 text-[13px] dark:border-zinc-700">
+      <div
+        class={`grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 border-t py-1 text-[13px] ${
+          props.plain
+            ? 'border-zinc-200 dark:border-dm-border'
+            : 'border-zinc-300 dark:border-dm-border'
+        }`}
+      >
         <span
-          class="font-semibold text-zinc-900 dark:text-zinc-100"
+          class="font-semibold text-zinc-900 dark:text-dm-text"
           style={{ 'padding-left': nameIndent() }}
         >
           {props.property.name}
@@ -82,7 +90,7 @@ function PropertyRow(props: {
             <span class="text-rose-600 dark:text-rose-400"> *</span>
           ) : null}
         </span>
-        <span class="font-mono text-[11px] text-sky-700 dark:text-sky-400">
+        <span class="font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
           <Show
             when={canExpand()}
             fallback={props.property.type}
@@ -95,7 +103,7 @@ function PropertyRow(props: {
             />
           </Show>
         </span>
-        <span class="text-zinc-600 dark:text-zinc-400">
+        <span class="text-zinc-700 dark:text-dm-muted">
           <Show
             when={props.property.enum?.length}
             fallback={props.property.description ?? '—'}
@@ -110,7 +118,7 @@ function PropertyRow(props: {
           when={nestedProperties().length > 0}
           fallback={
             <p
-              class="border-t border-zinc-300 py-1 text-xs text-zinc-500 dark:border-zinc-700"
+              class="border-t border-zinc-300 py-1 text-xs text-zinc-500 dark:border-dm-border dark:text-dm-muted"
               style={{ 'padding-left': nameIndent() }}
             >
               No properties defined
@@ -119,7 +127,7 @@ function PropertyRow(props: {
         >
           <For each={nestedProperties()}>
             {(child) => (
-              <PropertyRow spec={props.spec} property={child} depth={props.depth + 1} />
+              <PropertyRow spec={props.spec} property={child} depth={props.depth + 1} plain={props.plain} />
             )}
           </For>
         </Show>
@@ -130,21 +138,28 @@ function PropertyRow(props: {
 
 export function SchemaModel(props: SchemaModelProps) {
   const depth = () => props.depth ?? 0
+  const plain = () => props.plain ?? false
 
   return (
     <Show
       when={props.properties.length > 0}
-      fallback={<p class="text-xs text-zinc-500">No properties defined</p>}
+      fallback={<p class="text-xs text-zinc-600 dark:text-dm-muted">No properties defined</p>}
     >
-      <div class="overflow-x-auto rounded border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950/50">
-        <div class="grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 px-2 py-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+      <div
+        class={
+          plain()
+            ? 'overflow-x-auto'
+            : 'overflow-x-auto rounded border border-zinc-300 bg-white dark:border-dm-border dark:bg-dm-surface'
+        }
+      >
+        <div class="grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 px-2 py-1 text-[11px] font-semibold text-zinc-700 dark:text-dm-muted">
           <span>Name</span>
           <span>Type</span>
           <span>Description</span>
         </div>
         <For each={props.properties}>
           {(property) => (
-            <PropertyRow spec={props.spec} property={property} depth={depth()} />
+            <PropertyRow spec={props.spec} property={property} depth={depth()} plain={plain()} />
           )}
         </For>
       </div>

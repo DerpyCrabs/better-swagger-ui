@@ -37,7 +37,7 @@ export function CopyButton(props: CopyButtonProps) {
         event.stopPropagation()
         void copy()
       }}
-      class={`inline-flex items-center rounded border border-zinc-400 p-1 text-zinc-700 hover:bg-white disabled:opacity-40 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 ${props.class ?? ''}`}
+      class={`inline-flex items-center rounded border border-zinc-400 p-1 text-zinc-700 hover:bg-white disabled:opacity-40 dark:border-dm-border dark:text-dm-text dark:hover:bg-dm-surface-hover ${props.class ?? ''}`}
     >
       <Show when={copied()} fallback={<Copy size={12} />}>
         <Check size={12} class="text-emerald-600 dark:text-emerald-400" />

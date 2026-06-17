@@ -5,6 +5,14 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+
+  --color-dm-base: #0d1117;
+  --color-dm-surface: #161b22;
+  --color-dm-surface-hover: #1c2128;
+  --color-dm-text: #e6edf2;
+  --color-dm-muted: #8b949e;
+  --color-dm-input: #0d1117;
+  --color-dm-border: rgb(255 255 255 / 0.08);
 }
 
 html {
@@ -12,7 +20,7 @@ html {
 }
 
 body {
-  @apply m-0 min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  @apply m-0 min-h-screen bg-white text-zinc-900 antialiased dark:bg-dm-base dark:text-dm-text;
 }
 
 :root:not(.dark) .hljs-string {

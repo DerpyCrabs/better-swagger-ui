@@ -10,13 +10,13 @@ interface ParamInputProps {
 }
 
 const inputClass =
-  'w-full max-w-sm rounded border bg-white px-2 py-1 text-[13px] text-zinc-900 outline-none focus:ring-1 dark:bg-zinc-950 dark:text-zinc-100'
+  'w-full max-w-sm rounded-md border bg-white px-2 py-1 text-[13px] text-zinc-900 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted'
 
 function fieldClass(invalid: boolean) {
   return `${inputClass} ${
     invalid
       ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50 dark:border-rose-500'
-      : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:border-zinc-600'
+      : 'border-zinc-400 focus:border-sky-500 focus:ring-sky-500/50 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
   }`
 }
 
