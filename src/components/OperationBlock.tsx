@@ -17,7 +17,6 @@ import { VirtualJsonViewer } from './VirtualJsonViewer'
 import { CopyButton } from './CopyButton'
 import { useAuth } from '../lib/auth-context'
 import {
-  appendQueryParam,
   emptyParamValues,
   resolveParameterMeta,
   validateAllParams,
@@ -26,6 +25,7 @@ import {
 } from '../lib/param-schema'
 import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
 import { buildAcceptHeader } from '../lib/accept-header'
+import { buildUrl } from '../lib/build-request-url'
 import { proxyFetch } from '../lib/proxy-fetch'
 
 interface OperationBlockProps {
@@ -52,42 +52,6 @@ interface TryItResult {
   fileName: string | null
   contentDisposition: string | null
   requestUrl: string
-}
-
-function buildUrl(
-  serverUrl: string,
-  specUrl: string,
-  path: string,
-  defs: ParamInputMeta[],
-  values: Record<string, string>,
-): string {
-  let resolvedPath = path
-  const query = new URLSearchParams()
-
-  for (const param of defs) {
-    const value = values[param.name] ?? ''
-    if (param.in === 'path') {
-      const trimmed = value.trim()
-      if (trimmed) {
-        resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(trimmed))
-      }
-      continue
-    }
-
-    if (param.in === 'query') {
-      appendQueryParam(query, param, value)
-    }
-  }
-
-  const base = resolveServerUrl(serverUrl, specUrl).replace(/\/$/, '')
-  const url = `${base}${resolvedPath}`
-  const queryString = query.toString()
-  return queryString ? `${url}?${queryString}` : url
-}
-
-function resolveServerUrl(serverUrl: string, specUrl: string): string {
-  if (/^https?:\/\//i.test(serverUrl)) return serverUrl
-  return new URL(serverUrl, new URL(specUrl).origin).href
 }
 
 export function OperationBlock(props: OperationBlockProps) {
@@ -287,6 +251,7 @@ export function OperationBlock(props: OperationBlockProps) {
   return (
     <div
       data-op-id={props.item.id}
+      data-testid={`operation-${props.item.id}`}
       class="scroll-mt-24 border-b border-zinc-200 last:border-b-0 dark:border-zinc-800"
     >
       <button
@@ -332,6 +297,7 @@ export function OperationBlock(props: OperationBlockProps) {
               fallback={
                 <button
                   type="button"
+                  data-testid="try-it-out"
                   class="rounded border border-zinc-400 px-2.5 py-0.5 text-xs font-semibold text-zinc-800 hover:bg-white dark:border-zinc-500 dark:text-zinc-200 dark:hover:bg-zinc-800"
                   onClick={(event) => {
                     event.stopPropagation()
@@ -344,6 +310,7 @@ export function OperationBlock(props: OperationBlockProps) {
             >
               <button
                 type="button"
+                data-testid="cancel-try-it-out"
                 class="rounded border border-rose-500 px-2.5 py-0.5 text-xs font-semibold text-rose-600 hover:bg-white dark:border-rose-600 dark:text-rose-400 dark:hover:bg-zinc-800"
                 onClick={(event) => {
                   event.stopPropagation()
@@ -477,6 +444,7 @@ export function OperationBlock(props: OperationBlockProps) {
             <div class="mt-2 border-t border-zinc-300 pt-2 dark:border-zinc-700">
               <button
                 type="button"
+                data-testid="execute"
                 disabled={loading()}
                 onClick={(event) => {
                   event.stopPropagation()
@@ -511,6 +479,7 @@ export function OperationBlock(props: OperationBlockProps) {
                     <Show when={res().isFile}>
                       <button
                         type="button"
+                        data-testid="download-response"
                         onClick={(event) => {
                           event.stopPropagation()
                           downloadFile(res())
@@ -528,6 +497,7 @@ export function OperationBlock(props: OperationBlockProps) {
                 </div>
                 <div class="flex flex-wrap items-center gap-3 text-sm">
                   <span
+                    data-testid="response-status"
                     class={`rounded px-2 py-0.5 font-medium ${
                       res().status >= 200 && res().status < 300
                         ? 'bg-emerald-600/20 text-emerald-600 dark:text-emerald-400'
@@ -541,6 +511,7 @@ export function OperationBlock(props: OperationBlockProps) {
                     <span class="font-mono text-xs text-zinc-500">{res().contentType}</span>
                   </Show>
                 </div>
+                <div data-testid="response-body">
                 <Show
                   when={res().isFile}
                   fallback={<VirtualJsonViewer data={res().body} maxHeight="32rem" />}
@@ -565,6 +536,7 @@ export function OperationBlock(props: OperationBlockProps) {
                     </Show>
                   </div>
                 </Show>
+                </div>
               </div>
             )}
           </Show>

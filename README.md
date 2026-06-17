@@ -36,6 +36,18 @@ This routes cross-origin requests through `/__proxy` on the local Vite dev serve
    - Common paths (`/v3/api-docs`, `/swagger.json`, …)
 4. Browse operations in the sidebar and use **Try it out** to execute requests
 
+## Testing
+
+```bash
+npm test              # Vitest unit tests
+npm run test:watch    # Vitest watch mode
+npm run test:coverage # Coverage report for src/lib
+npm run test:e2e      # Playwright E2E (starts dev + fixture servers)
+npm run test:e2e:ui   # Playwright interactive UI
+```
+
+E2E tests use OpenAPI fixtures in `tests/fixtures/`, served by the dev server at `/fixtures/` (same origin, no CORS issues).
+
 ## Limitations (MVP)
 
 - No YAML paste/upload — Swagger UI links only

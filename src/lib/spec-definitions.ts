@@ -22,7 +22,7 @@ function isSwaggerUiPage(pathname: string): boolean {
   return /\/swagger-ui\/?/i.test(pathname)
 }
 
-function isPlaceholderSpecUrl(url: string): boolean {
+export function isPlaceholderSpecUrl(url: string): boolean {
   try {
     return SWAGGER_PLACEHOLDER_HOST.test(new URL(url).hostname)
   } catch {
@@ -44,7 +44,7 @@ function normalizeDefinitions(
   }))
 }
 
-function parseInitializerUrls(text: string, base: URL): SpecDefinition[] | null {
+export function parseInitializerUrls(text: string, base: URL): SpecDefinition[] | null {
   if (/urls\s*:\s*\[/.test(text)) {
     const blockMatch = text.match(
       /urls\s*:\s*\[([\s\S]*?)\]\s*,?\s*(?:validatorUrl|oauth2RedirectUrl|presets|configUrl|layout|\w+\s*:)/,

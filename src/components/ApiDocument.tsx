@@ -109,7 +109,7 @@ export function ApiDocument(props: ApiDocumentProps) {
   return (
     <div>
       <section class="mb-6 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-        <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50" data-testid="api-title">
           {props.loaded.spec.info.title}
         </h2>
           <Show when={props.loaded.spec.info.version}>
@@ -134,7 +134,7 @@ export function ApiDocument(props: ApiDocumentProps) {
             const description = () => descriptions().get(tag)
 
             return (
-              <section class="border-b border-zinc-200 dark:border-zinc-800">
+              <section class="border-b border-zinc-200 dark:border-zinc-800" data-testid={`tag-section-${tag}`}>
                 <button
                   type="button"
                   class="flex w-full items-center gap-3 px-2 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/50"

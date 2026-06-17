@@ -34,6 +34,11 @@ function assertOpenApi(doc: unknown): asserts doc is OpenAPIV3.Document {
   }
 }
 
+export function validateOpenApiDocument(doc: unknown): OpenAPIV3.Document {
+  assertOpenApi(doc)
+  return doc
+}
+
 export async function loadSpecDocument(specUrl: string): Promise<OpenAPIV3.Document> {
   const raw = await fetchJson(specUrl)
   assertOpenApi(raw)

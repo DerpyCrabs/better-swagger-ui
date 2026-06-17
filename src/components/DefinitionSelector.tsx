@@ -22,6 +22,7 @@ export function DefinitionSelector(props: DefinitionSelectorProps) {
       <div class="relative shrink-0">
         <select
           ref={selectRef}
+          data-testid="definition-select"
           aria-label="Select a definition"
           title="Select a definition"
           onChange={(event) => props.onChange(event.currentTarget.value)}

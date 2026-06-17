@@ -146,6 +146,7 @@ function OAuthPasswordForm(props: {
 
           <button
             type="submit"
+            data-testid={`${props.scheme.id}-authorize`}
             disabled={loading()}
             class="rounded border border-emerald-600 px-4 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
           >
@@ -262,6 +263,7 @@ function OAuthClientCredentialsForm(props: {
 
         <button
           type="button"
+          data-testid={`${props.scheme.id}-authorize`}
           disabled={loading()}
           onClick={() => void submit()}
           class="rounded border border-emerald-600 px-4 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
@@ -313,6 +315,7 @@ function ApiKeyForm(props: {
         />
         <button
           type="button"
+          data-testid={`${props.scheme.id}-authorize`}
           onClick={() => {
             auth.authorizeApiKey(props.scheme.id, value())
             props.onAuthorized?.()
@@ -355,6 +358,7 @@ function BearerForm(props: {
         />
         <button
           type="button"
+          data-testid={`${props.scheme.id}-authorize`}
           onClick={() => {
             auth.authorizeBearer(props.scheme.id, token())
             props.onAuthorized?.()
@@ -394,6 +398,7 @@ export function AuthorizeDialog(props: AuthorizeDialogProps) {
           <div
             role="dialog"
             aria-modal="true"
+            data-testid="authorize-dialog"
             class="max-h-[80vh] w-full max-w-lg overflow-auto rounded-lg border border-zinc-300 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
           >
           <div class="flex items-center justify-between border-b border-zinc-300 px-4 py-3 dark:border-zinc-700">
@@ -447,6 +452,7 @@ export function AuthorizeButton(props: { compact?: boolean }) {
     <Show when={auth.hasAnyScheme()}>
       <button
         type="button"
+        data-testid="authorize-button"
         onClick={() => setOpen(true)}
         title={label()}
         class={`inline-flex shrink-0 items-center rounded-md border font-medium transition ${

@@ -48,11 +48,12 @@ export function AppHeader(props: AppHeaderProps) {
           Better Swagger UI
         </span>
 
-        <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+        <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3" data-testid="load-form">
           <div class="relative min-w-0 flex-1">
             <input
               type="url"
               required
+              data-testid="url-input"
               value={props.url}
               onInput={(event) => props.onUrlChange(event.currentTarget.value)}
               onPaste={handlePaste}
