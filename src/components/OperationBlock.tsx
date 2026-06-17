@@ -15,6 +15,7 @@ import { ParamInput } from './ParamInput'
 import { RequestBodySchemaView, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 import { CopyButton } from './CopyButton'
+import { AuthorizeDialog } from './AuthorizeDialog'
 import { useAuth } from '../lib/auth-context'
 import {
   emptyParamValues,
@@ -33,10 +34,10 @@ interface OperationBlockProps {
   spec: OpenAPIV3.Document
   serverUrl: string
   specUrl: string
-  secured: boolean
   expanded: boolean
   autoTryItOut: boolean
   onTryItOutDismiss: () => void
+  onAuthorizeFromLock?: () => void
   onToggle: () => void
 }
 
@@ -56,6 +57,7 @@ interface TryItResult {
 
 export function OperationBlock(props: OperationBlockProps) {
   const auth = useAuth()
+  const [authorizeOpen, setAuthorizeOpen] = createSignal(false)
   const [tryItOut, setTryItOut] = createSignal(false)
   const paramDefs = createMemo(() => resolveParameterMeta(props.spec, props.item))
   const [paramValues, setParamValues] = createStore<Record<string, string>>({})
@@ -254,31 +256,49 @@ export function OperationBlock(props: OperationBlockProps) {
       data-testid={`operation-${props.item.id}`}
       class="scroll-mt-24 border-b border-zinc-200 last:border-b-0 dark:border-zinc-800"
     >
-      <button
-        type="button"
-        class={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-zinc-100 dark:hover:bg-zinc-900/60 ${
+      <div
+        class={`flex w-full items-stretch transition hover:bg-zinc-100 dark:hover:bg-zinc-900/60 ${
           props.expanded ? 'bg-zinc-50 dark:bg-zinc-900/40' : ''
         }`}
-        onClick={props.onToggle}
       >
-        <span
-          class={`inline-flex w-[4.75rem] shrink-0 items-center justify-center rounded px-2 py-0.5 text-[11px] font-bold uppercase ring-1 ring-inset ${methodColor(props.item.method)}`}
+        <button
+          type="button"
+          class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left"
+          onClick={props.onToggle}
         >
-          {props.item.method}
-        </span>
-        <span class="min-w-0 flex-1">
-          <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{props.item.path}</span>
-          <Show when={summary()}>
-            <span class="ml-2 text-sm text-zinc-500">{summary()}</span>
-          </Show>
-        </span>
-        <span class="flex shrink-0 items-center gap-2 text-zinc-400 dark:text-zinc-500">
-          <Show when={props.secured}>
+          <span
+            class={`inline-flex w-[4.75rem] shrink-0 items-center justify-center rounded px-2 py-0.5 text-[11px] font-bold uppercase ring-1 ring-inset ${methodColor(props.item.method)}`}
+          >
+            {props.item.method}
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="font-mono text-sm text-zinc-800 dark:text-zinc-200">{props.item.path}</span>
+            <Show when={summary()}>
+              <span class="ml-2 text-sm text-zinc-500">{summary()}</span>
+            </Show>
+          </span>
+          <span class="shrink-0 text-zinc-400 dark:text-zinc-500">
+            {props.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </span>
+        </button>
+        <Show when={auth.hasAnyScheme()}>
+          <button
+            type="button"
+            data-testid="operation-authorize-lock"
+            title="Authorize"
+            aria-label="Authorize"
+            onClick={() => setAuthorizeOpen(true)}
+            class="shrink-0 px-2.5 text-zinc-400 transition hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+          >
             <Lock size={15} />
-          </Show>
-          {props.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </span>
-      </button>
+          </button>
+        </Show>
+      </div>
+      <AuthorizeDialog
+        open={authorizeOpen()}
+        onClose={() => setAuthorizeOpen(false)}
+        onAuthorized={() => props.onAuthorizeFromLock?.()}
+      />
 
       <Show when={props.expanded}>
         <div class="border-t border-zinc-300 bg-zinc-100/80 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">

@@ -8,6 +8,7 @@ import type { SecuritySchemeInfo } from '../lib/auth-config'
 interface AuthorizeDialogProps {
   open: boolean
   onClose: () => void
+  onAuthorized?: () => void
 }
 
 function OAuthPasswordForm(props: {
@@ -390,6 +391,10 @@ function SchemeForm(props: { scheme: SecuritySchemeInfo; onAuthorized?: () => vo
 
 export function AuthorizeDialog(props: AuthorizeDialogProps) {
   const auth = useAuth()
+  const handleAuthorized = () => {
+    props.onAuthorized?.()
+    props.onClose()
+  }
 
   return (
     <Show when={props.open}>
@@ -422,7 +427,7 @@ export function AuthorizeDialog(props: AuthorizeDialogProps) {
             </p>
 
             <For each={auth.schemes()}>
-              {(scheme) => <SchemeForm scheme={scheme} onAuthorized={props.onClose} />}
+              {(scheme) => <SchemeForm scheme={scheme} onAuthorized={handleAuthorized} />}
             </For>
           </div>
 

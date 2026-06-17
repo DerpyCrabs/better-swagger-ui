@@ -163,6 +163,13 @@ function App() {
     syncRoute(inputUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
+  const handleExpandAndTryItOut = (op: string) => {
+    setExpandedOp(op)
+    setScrollToOp(op)
+    setTryItOutOp(op)
+    syncRoute(inputUrl(), op, definitionForRoute(definition(), definitions()))
+  }
+
   onMount(() => {
     const route = readRoute()
     if (route.url) {
@@ -222,6 +229,7 @@ function App() {
                 onTryItOutDismiss={() => setTryItOutOp(null)}
                 onScrollToOpDone={() => setScrollToOp(null)}
                 onExpandedOpChange={handleExpandedOpChange}
+                onExpandAndTryItOut={handleExpandAndTryItOut}
               />
             </main>
           )}

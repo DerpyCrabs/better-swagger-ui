@@ -1,6 +1,5 @@
 import { For, Show, createEffect, createSignal } from 'solid-js'
 import { ChevronDown, ChevronUp } from '../icons'
-import type { OpenAPIV3 } from 'openapi-types'
 import type { LoadedSpec } from '../lib/load-spec'
 import {
   collectOperations,
@@ -20,16 +19,7 @@ interface ApiDocumentProps {
   onTryItOutDismiss: () => void
   onScrollToOpDone: () => void
   onExpandedOpChange: (op: string | null) => void
-}
-
-function isOperationSecured(
-  spec: OpenAPIV3.Document,
-  operation: OpenAPIV3.OperationObject,
-): boolean {
-  if (operation.security !== undefined) {
-    return operation.security.length > 0
-  }
-  return Boolean(spec.security?.length)
+  onExpandAndTryItOut: (op: string) => void
 }
 
 function scrollToOperation(opId: string, smooth = false) {
@@ -158,10 +148,10 @@ export function ApiDocument(props: ApiDocumentProps) {
                           spec={props.loaded.spec}
                           serverUrl={serverUrl()}
                           specUrl={props.loaded.specUrl}
-                          secured={isOperationSecured(props.loaded.spec, item.operation)}
                           expanded={props.expandedOp === item.id}
                           autoTryItOut={props.tryItOutOp === item.id}
                           onTryItOutDismiss={props.onTryItOutDismiss}
+                          onAuthorizeFromLock={() => props.onExpandAndTryItOut(item.id)}
                           onToggle={() => toggleOperation(item)}
                         />
                       )}

@@ -25,21 +25,33 @@ test.describe('browse API documentation', () => {
 
   test('shows operation method, path, summary, and lock icon', async ({ page }) => {
     await page.getByTestId('tag-section-alpha').getByRole('button').click()
-    const header = page.getByTestId('operation-get:/alpha/a').getByRole('button').first()
-    await expect(header).toContainText('get')
-    await expect(header).toContainText('/alpha/a')
-    await expect(header).toContainText('Alpha A')
-    await expect(header.locator('svg')).not.toHaveCount(0)
+    const op = page.getByTestId('operation-get:/alpha/a')
+    const toggle = op.getByRole('button').first()
+    await expect(toggle).toContainText('get')
+    await expect(toggle).toContainText('/alpha/a')
+    await expect(toggle).toContainText('Alpha A')
+    await expect(op.getByTestId('operation-authorize-lock')).toBeVisible()
   })
 
-  test('public operation has no lock icon', async ({ page }) => {
+  test('operation lock opens authorize dialog without expanding operation', async ({ page }) => {
     await page.getByTestId('tag-section-beta').getByRole('button').click()
-    const headerHtml = await page
-      .getByTestId('operation-get:/beta/x')
-      .getByRole('button')
-      .first()
-      .innerHTML()
-    expect(headerHtml).not.toContain('lucide-lock')
+    const op = page.getByTestId('operation-get:/beta/x')
+    await op.getByTestId('operation-authorize-lock').click()
+    await expect(page.getByTestId('authorize-dialog')).toBeVisible()
+    await page.getByTestId('authorize-dialog').getByText('Close', { exact: true }).click()
+    await expect(op.getByTestId('operation-authorize-lock')).toBeVisible()
+    await expect(op.getByTestId('cancel-try-it-out')).not.toBeVisible()
+  })
+
+  test('operation lock expands and activates try it out after authorize', async ({ page }) => {
+    await page.getByTestId('tag-section-beta').getByRole('button').click()
+    const op = page.getByTestId('operation-get:/beta/x')
+    await op.getByTestId('operation-authorize-lock').click()
+    await page.getByPlaceholder('X-API-Key').fill('beta-key')
+    await page.getByTestId('ApiKeyAuth-authorize').click()
+    await expect(page.getByTestId('authorize-dialog')).not.toBeVisible()
+    await expect(op.getByTestId('cancel-try-it-out')).toBeVisible()
+    await expect(op.getByTestId('try-it-out')).not.toBeVisible()
   })
 
   test('expands schema composition with refs and allOf', async ({ page }) => {
