@@ -1,8 +1,10 @@
 import { Show } from 'solid-js'
+import { Upload } from '../icons'
+import { looksLikeSpecText } from '../lib/parse-spec'
+import type { SpecDefinition } from '../lib/spec-definitions'
 import { AuthorizeButton } from './AuthorizeDialog'
 import { DefinitionSelector } from './DefinitionSelector'
 import { ThemeToggle } from './ThemeToggle'
-import type { SpecDefinition } from '../lib/spec-definitions'
 
 interface AppHeaderProps {
   url: string
@@ -11,6 +13,7 @@ interface AppHeaderProps {
   selectedDefinition: string | null
   onUrlChange: (url: string) => void
   onLoad: (url: string) => void
+  onLoadContent?: (sourceLabel: string, text: string) => void
   onDefinitionChange?: (name: string) => void
 }
 
@@ -24,6 +27,8 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export function AppHeader(props: AppHeaderProps) {
+  let fileInput: HTMLInputElement | undefined
+
   const submit = (event: Event) => {
     event.preventDefault()
     const trimmed = props.url.trim()
@@ -34,11 +39,33 @@ export function AppHeader(props: AppHeaderProps) {
 
   const handlePaste = (event: ClipboardEvent) => {
     const pasted = event.clipboardData?.getData('text').trim() ?? ''
-    if (!isValidHttpUrl(pasted)) return
+    if (!pasted) return
 
-    event.preventDefault()
-    props.onUrlChange(pasted)
-    props.onLoad(pasted)
+    if (isValidHttpUrl(pasted)) {
+      event.preventDefault()
+      props.onUrlChange(pasted)
+      props.onLoad(pasted)
+      return
+    }
+
+    if (props.onLoadContent && looksLikeSpecText(pasted)) {
+      event.preventDefault()
+      const label = pasted.startsWith('{') ? 'pasted-spec.json' : 'pasted-spec.yaml'
+      props.onUrlChange(label)
+      props.onLoadContent(label, pasted)
+    }
+  }
+
+  const handleFileChange = (event: Event) => {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0]
+    if (!file || !props.onLoadContent) return
+
+    void file.text().then((text) => {
+      props.onLoadContent?.(file.name, text)
+      props.onUrlChange(file.name)
+    })
+
+    ;(event.currentTarget as HTMLInputElement).value = ''
   }
 
   return (
@@ -51,15 +78,37 @@ export function AppHeader(props: AppHeaderProps) {
         <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3" data-testid="load-form">
           <div class="relative min-w-0 flex-1">
             <input
-              type="url"
-              required
+              type="text"
               data-testid="url-input"
               value={props.url}
               onInput={(event) => props.onUrlChange(event.currentTarget.value)}
               onPaste={handlePaste}
-              placeholder="Swagger UI URL"
-              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
+              placeholder="Swagger UI URL or paste YAML/JSON"
+              class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-9 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
             />
+
+            <Show when={props.onLoadContent}>
+              <>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept=".yaml,.yml,.json,application/json,application/yaml,text/yaml"
+                  class="hidden"
+                  data-testid="spec-file-input"
+                  onChange={handleFileChange}
+                />
+                <button
+                  type="button"
+                  data-testid="spec-upload-button"
+                  title="Upload OpenAPI YAML or JSON"
+                  aria-label="Upload OpenAPI YAML or JSON"
+                  onClick={() => fileInput?.click()}
+                  class="absolute inset-y-0 right-0 inline-flex items-center justify-center rounded-r-md px-2.5 text-zinc-500 hover:text-zinc-700 dark:text-dm-muted dark:hover:text-dm-text"
+                >
+                  <Upload size={16} />
+                </button>
+              </>
+            </Show>
           </div>
 
           <Show when={props.definitions.length > 1}>

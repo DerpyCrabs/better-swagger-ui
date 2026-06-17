@@ -1,3 +1,4 @@
+import { parseSpecResponse } from './parse-spec'
 import { proxyFetch } from './proxy-fetch'
 
 function wrapFetchError(url: string, err: unknown): Error {
@@ -31,4 +32,13 @@ export async function fetchJson<T = unknown>(url: string): Promise<T> {
     throw new Error(`HTTP ${response.status} fetching ${url}`)
   }
   return response.json() as Promise<T>
+}
+
+export async function fetchSpec(url: string): Promise<unknown> {
+  const response = await fetchResponse(url)
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} fetching ${url}`)
+  }
+  const text = await response.text()
+  return parseSpecResponse(text, url, response.headers.get('content-type'))
 }

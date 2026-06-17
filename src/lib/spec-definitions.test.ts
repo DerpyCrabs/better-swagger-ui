@@ -10,12 +10,14 @@ import {
 vi.mock('./fetch-utils', () => ({
   fetchText: vi.fn(),
   fetchJson: vi.fn(),
+  fetchSpec: vi.fn(),
 }))
 
-import { fetchJson, fetchText } from './fetch-utils'
+import { fetchJson, fetchSpec, fetchText } from './fetch-utils'
 
 const mockedFetchText = vi.mocked(fetchText)
 const mockedFetchJson = vi.mocked(fetchJson)
+const mockedFetchSpec = vi.mocked(fetchSpec)
 
 describe('pickDefinition', () => {
   const defs: SpecDefinition[] = [
@@ -73,7 +75,7 @@ describe('parseInitializerUrls', () => {
 
 describe('discoverSpecDefinitions', () => {
   it('loads direct OpenAPI URL', async () => {
-    mockedFetchJson.mockResolvedValueOnce({
+    mockedFetchSpec.mockResolvedValueOnce({
       openapi: '3.0.0',
       info: { title: 'Direct', version: '1' },
       paths: {},
@@ -118,6 +120,7 @@ describe('discoverSpecDefinitions', () => {
   it('throws when nothing found', async () => {
     mockedFetchText.mockRejectedValue(new Error('404'))
     mockedFetchJson.mockRejectedValue(new Error('404'))
+    mockedFetchSpec.mockRejectedValue(new Error('404'))
 
     await expect(
       discoverSpecDefinitions('http://localhost:5199/swagger-ui/missing/index.html'),

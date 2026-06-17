@@ -3,7 +3,7 @@ import { AlertCircle } from './icons'
 import { ApiDocument } from './components/ApiDocument'
 import { AppHeader } from './components/AppHeader'
 import { AuthProvider } from './lib/auth-context'
-import { loadSpecDocument, loadSpecFromSwaggerUi } from './lib/load-spec'
+import { loadSpecDocument, loadSpecFromSwaggerUi, loadSpecFromText } from './lib/load-spec'
 import type { LoadedSpec } from './lib/load-spec'
 import { readRoute, subscribeRoute, writeRoute } from './lib/router'
 import type { SpecDefinition } from './lib/spec-definitions'
@@ -153,6 +153,38 @@ function App() {
     }
   }
 
+  const handleLoadContent = (sourceLabel: string, text: string) => {
+    const seq = ++loadSeq
+
+    setLoading(true)
+    setError(null)
+    setLoaded(null)
+    setDefinitions([])
+    setDefinition(null)
+    setExpandedOp(null)
+    setScrollToOp(null)
+    setTryItOutOp(null)
+    setInputUrl(sourceLabel)
+
+    try {
+      const result = loadSpecFromText(sourceLabel, text)
+      if (seq !== loadSeq) return
+
+      setLoaded(result)
+      setDefinitions(result.definitions)
+      setDefinition(result.selectedDefinition)
+      syncRoute('', null, null)
+    } catch (err) {
+      if (seq !== loadSeq) return
+      setError(err instanceof Error ? err.message : 'Failed to load spec')
+      syncRoute('', null, null)
+    } finally {
+      if (seq === loadSeq) {
+        setLoading(false)
+      }
+    }
+  }
+
   const handleDefinitionChange = (name: string) => {
     void switchDefinition(name)
   }
@@ -208,6 +240,7 @@ function App() {
           selectedDefinition={definition()}
           onUrlChange={setInputUrl}
           onLoad={(url) => void handleLoad(url, null, null)}
+          onLoadContent={handleLoadContent}
           onDefinitionChange={handleDefinitionChange}
         />
 
@@ -237,7 +270,7 @@ function App() {
 
         <Show when={!loaded() && !loading() && !error()}>
           <p class="px-4 py-10 text-center text-sm text-zinc-500">
-            Paste a Swagger UI URL above to get started.
+            Paste a Swagger UI URL, upload an OpenAPI file, or paste YAML/JSON spec content above.
           </p>
         </Show>
       </div>

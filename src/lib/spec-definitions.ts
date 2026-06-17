@@ -1,4 +1,4 @@
-import { fetchJson, fetchText } from './fetch-utils'
+import { fetchJson, fetchSpec, fetchText } from './fetch-utils'
 
 export interface SpecDefinition {
   name: string
@@ -156,6 +156,8 @@ const SPEC_CANDIDATES = [
   '/v2/api-docs',
   '/swagger.json',
   '/openapi.json',
+  '/openapi.yaml',
+  '/openapi.yml',
   '/api-docs',
   '/openapi/v1.json',
 ]
@@ -176,8 +178,10 @@ function buildCandidates(pageUrl: URL): string[] {
 
 async function looksLikeOpenApi(url: string): Promise<boolean> {
   try {
-    const json = await fetchJson<Record<string, unknown>>(url)
-    return typeof json.openapi === 'string' || typeof json.swagger === 'string'
+    const doc = await fetchSpec(url)
+    if (!doc || typeof doc !== 'object') return false
+    const record = doc as Record<string, unknown>
+    return typeof record.openapi === 'string' || typeof record.swagger === 'string'
   } catch {
     return false
   }

@@ -1,12 +1,13 @@
 # Better Swagger UI
 
-A minimal Swagger UI rewrite in SolidJS. Paste a link to an existing Swagger UI page and the app resolves the OpenAPI spec automatically.
+A minimal Swagger UI rewrite in SolidJS. Paste a link to an existing Swagger UI page, upload an OpenAPI file, or paste YAML/JSON spec content.
 
 ## Stack
 
 - **SolidJS** + Vite
 - **Tailwind CSS** + Lucide icons
 - **openapi-types** — OpenAPI TypeScript types
+- **yaml** — OpenAPI YAML parsing
 - **highlight.js** — JSON syntax highlighting
 - **@tanstack/solid-virtual** — virtualized response viewer for large JSON payloads
 - **marked** + **dompurify** — operation descriptions
@@ -29,11 +30,14 @@ This routes cross-origin requests through `/__proxy` on the local Vite dev serve
 ## Usage
 
 1. Open the app (default dev URL: `http://localhost:5173`)
-2. Paste a Swagger UI URL, e.g. `https://example.com/swagger-ui/index.html`
-3. The resolver tries, in order:
+2. Load a spec in one of three ways:
+   - Paste a Swagger UI URL, e.g. `https://example.com/swagger-ui/index.html`
+   - Upload an OpenAPI `.yaml`, `.yml`, or `.json` file
+   - Paste raw YAML or JSON spec content into the URL field
+3. For Swagger UI URLs, the resolver tries, in order:
    - `?url=` / `?configUrl=` query params
    - URLs embedded in the Swagger UI page or `swagger-initializer.js`
-   - Common paths (`/v3/api-docs`, `/swagger.json`, …)
+   - Common paths (`/v3/api-docs`, `/swagger.json`, `/openapi.yaml`, …)
 4. Browse operations in the sidebar and use **Try it out** to execute requests
 
 ## Testing
@@ -50,7 +54,6 @@ E2E tests use OpenAPI fixtures in `tests/fixtures/`, served by the dev server at
 
 ## Limitations (MVP)
 
-- No YAML paste/upload — Swagger UI links only
 - Simple parameter support (path, query, header) + raw JSON body
 - No auth flows beyond OAuth2 password/client credentials from `swagger-initializer.js`
 - Cross-origin specs require CORS on the API host in production builds

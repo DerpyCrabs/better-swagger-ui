@@ -1,7 +1,8 @@
 import type { OpenAPIV3 } from 'openapi-types'
 import type { InitOAuthConfig } from './auth-config'
 import { loadInitOAuth } from './auth-config'
-import { fetchJson } from './fetch-utils'
+import { fetchSpec } from './fetch-utils'
+import { parseSpecText } from './parse-spec'
 import {
   discoverSpecDefinitions,
   pickDefinition,
@@ -40,9 +41,23 @@ export function validateOpenApiDocument(doc: unknown): OpenAPIV3.Document {
 }
 
 export async function loadSpecDocument(specUrl: string): Promise<OpenAPIV3.Document> {
-  const raw = await fetchJson(specUrl)
+  const raw = await fetchSpec(specUrl)
   assertOpenApi(raw)
   return raw
+}
+
+export function loadSpecFromText(sourceLabel: string, text: string): LoadedSpec {
+  const raw = parseSpecText(text)
+  assertOpenApi(raw)
+
+  return {
+    spec: raw,
+    specUrl: sourceLabel,
+    sourceUrl: sourceLabel,
+    oauthInit: null,
+    definitions: [{ name: 'default', url: sourceLabel }],
+    selectedDefinition: 'default',
+  }
 }
 
 export async function loadSpecFromSwaggerUi(
@@ -63,7 +78,7 @@ export async function loadSpecFromSwaggerUi(
   const selected = pickDefinition(definitions, definitionName)
 
   const [raw, oauthInit] = await Promise.all([
-    fetchJson(selected.url),
+    fetchSpec(selected.url),
     loadInitOAuth(trimmed),
   ])
 

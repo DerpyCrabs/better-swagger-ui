@@ -40,6 +40,43 @@ test.describe('spec loading', () => {
     await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
   })
 
+  test('loads direct OpenAPI YAML URL', async ({ page }) => {
+    await loadSpec(page, specUrl('minimal.yaml'))
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API')
+  })
+
+  test('loads uploaded YAML file', async ({ page }) => {
+    await page.goto('/')
+    await page.getByTestId('spec-file-input').setInputFiles('tests/fixtures/openapi/minimal.yaml')
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API', { timeout: 15_000 })
+  })
+
+  test('loads pasted YAML content', async ({ page }) => {
+    const yaml = `openapi: 3.0.3
+info:
+  title: Minimal API
+  version: 1.0.0
+paths:
+  /pets:
+    get:
+      responses:
+        '200':
+          description: OK`
+
+    await page.goto('/')
+    await page.getByTestId('url-input').focus()
+    await page.evaluate((content) => {
+      const input = document.querySelector('[data-testid="url-input"]') as HTMLInputElement | null
+      if (!input) throw new Error('url input not found')
+
+      const clipboard = new DataTransfer()
+      clipboard.setData('text/plain', content)
+      input.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true }))
+    }, yaml)
+
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API', { timeout: 15_000 })
+  })
+
   test('shows error when spec cannot be loaded', async ({ page }) => {
     await page.goto('/')
     await page.getByTestId('url-input').fill('http://127.0.0.1:9/openapi.json')
