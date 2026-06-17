@@ -5,10 +5,18 @@ import jsonLang from 'highlight.js/lib/languages/json'
 
 hljs.registerLanguage('json', jsonLang)
 
+const HIGHLIGHT_MAX_BYTES = 3 * 1024 * 1024
+
 interface VirtualJsonViewerProps {
   data: unknown
   maxHeight?: string
   class?: string
+  /** When false, skip syntax highlighting (also skipped automatically above 3 MB). */
+  highlight?: boolean
+}
+
+function textByteLength(text: string): number {
+  return new TextEncoder().encode(text).length
 }
 
 function escapeHtml(text: string): string {
@@ -45,7 +53,11 @@ export function VirtualJsonViewer(props: VirtualJsonViewerProps) {
 
   const lines = createMemo(() => {
     const { text, language } = toPrettyJson(props.data)
-    if (language === 'json') {
+    const shouldHighlight =
+      props.highlight !== false &&
+      language === 'json' &&
+      textByteLength(text) <= HIGHLIGHT_MAX_BYTES
+    if (shouldHighlight) {
       return hljs.highlight(text, { language: 'json' }).value.split('\n')
     }
     return text.split('\n').map((line) => escapeHtml(line))
