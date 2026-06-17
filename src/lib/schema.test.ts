@@ -4,6 +4,8 @@ import schemasComposition from '../../tests/fixtures/openapi/schemas-composition
 import refsLimits from '../../tests/fixtures/openapi/refs-limits.json'
 import requestBody from '../../tests/fixtures/openapi/request-body.json'
 import {
+  formatRequestBodySchemaForCopy,
+  formatResponseSchemaForCopy,
   getRequestBodySchema,
   getResponseSchemas,
   primaryJsonMedia,
@@ -161,5 +163,29 @@ describe('primaryJsonMedia', () => {
     const info = getRequestBodySchema(bodySpec, op.requestBody)!
     const primary = primaryJsonMedia(info)
     expect(primary?.contentType).toBe('application/json')
+  })
+})
+
+describe('schema copy helpers', () => {
+  it('copies only the request body schema', () => {
+    const op = bodySpec.paths['/items']!.post!
+    const info = getRequestBodySchema(bodySpec, op.requestBody)!
+    const copied = JSON.parse(formatRequestBodySchemaForCopy(info))
+
+    expect(copied.type).toBe('object')
+    expect(copied.properties.name).toEqual({ type: 'string' })
+    expect(copied).not.toHaveProperty('contentType')
+    expect(copied).not.toHaveProperty('example')
+  })
+
+  it('copies only the response schema', () => {
+    const op = compositionSpec.paths['/pets/{id}']!.get!
+    const response = getResponseSchemas(compositionSpec, op.responses)[0]!
+    const copied = JSON.parse(formatResponseSchemaForCopy(response))
+
+    expect(copied.properties.name).toEqual({ type: 'string' })
+    expect(copied).not.toHaveProperty('status')
+    expect(copied).not.toHaveProperty('schemaName')
+    expect(copied).not.toHaveProperty('example')
   })
 })

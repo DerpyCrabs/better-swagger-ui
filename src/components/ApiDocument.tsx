@@ -10,6 +10,7 @@ import {
 } from '../lib/operations'
 import { MarkdownText } from './MarkdownText'
 import { OperationBlock } from './OperationBlock'
+import { SpecSchemaActions } from './SpecSchemaActions'
 
 interface ApiDocumentProps {
   loaded: LoadedSpec
@@ -99,12 +100,17 @@ export function ApiDocument(props: ApiDocumentProps) {
   return (
     <div>
       <section class="mb-6 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-        <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50" data-testid="api-title">
-          {props.loaded.spec.info.title}
-        </h2>
-          <Show when={props.loaded.spec.info.version}>
-            <p class="mt-1 text-sm text-zinc-500">v{props.loaded.spec.info.version}</p>
-          </Show>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50" data-testid="api-title">
+              {props.loaded.spec.info.title}
+            </h2>
+            <Show when={props.loaded.spec.info.version}>
+              <p class="mt-1 text-sm text-zinc-500">v{props.loaded.spec.info.version}</p>
+            </Show>
+          </div>
+          <SpecSchemaActions spec={props.loaded.spec} specUrl={props.loaded.specUrl} />
+        </div>
           <Show when={props.loaded.spec.info.description}>
             <div class="mt-4 text-sm">
               <MarkdownText content={props.loaded.spec.info.description} />

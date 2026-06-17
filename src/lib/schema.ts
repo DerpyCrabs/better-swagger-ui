@@ -292,3 +292,31 @@ export function getResponseSchemas(
 export function primaryJsonMedia(info: { media: MediaSchemaInfo[] }): MediaSchemaInfo | null {
   return info.media.find((item) => item.contentType.includes('json')) ?? info.media[0] ?? null
 }
+
+export function formatRequestBodySchemaForCopy(info: RequestBodySchemaInfo): string {
+  const primary = primaryJsonMedia(info)
+  if (primary?.schema) return JSON.stringify(primary.schema, null, 2)
+
+  const schemas = info.media
+    .map((media) => media.schema)
+    .filter((schema): schema is OpenAPIV3.SchemaObject => schema !== null)
+
+  if (schemas.length === 0) return ''
+  return JSON.stringify(schemas.length === 1 ? schemas[0] : schemas, null, 2)
+}
+
+export function formatResponseSchemaForCopy(response: ResponseSchemaInfo): string {
+  const primary = primaryJsonMedia(response)
+  if (primary?.schema) return JSON.stringify(primary.schema, null, 2)
+
+  const schemas = response.media
+    .map((media) => media.schema)
+    .filter((schema): schema is OpenAPIV3.SchemaObject => schema !== null)
+
+  if (schemas.length === 0) return ''
+  return JSON.stringify(schemas.length === 1 ? schemas[0] : schemas, null, 2)
+}
+
+export function hasCopyableSchema(info: { media: MediaSchemaInfo[] }): boolean {
+  return info.media.some((media) => media.schema !== null)
+}

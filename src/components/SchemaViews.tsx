@@ -1,8 +1,14 @@
 import { For, Show } from 'solid-js'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { MediaSchemaInfo, RequestBodySchemaInfo, ResponseSchemaInfo } from '../lib/schema'
+import {
+  formatRequestBodySchemaForCopy,
+  formatResponseSchemaForCopy,
+  hasCopyableSchema,
+} from '../lib/schema'
 import { SchemaModel } from './SchemaModel'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
+import { CopyButton } from './CopyButton'
 
 interface SchemaSectionProps {
   spec: OpenAPIV3.Document
@@ -45,14 +51,24 @@ interface RequestBodySchemaViewProps {
 }
 
 export function RequestBodySchemaView(props: RequestBodySchemaViewProps) {
+  const copyText = () => formatRequestBodySchemaForCopy(props.info)
+
   return (
     <section class="mt-3 space-y-2 border-t border-zinc-300 pt-2 dark:border-zinc-700">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <h4 class="text-xs font-bold tracking-wide text-zinc-900 uppercase dark:text-zinc-100">
           Request body
         </h4>
         <Show when={props.info.required}>
           <span class="text-[11px] text-rose-600 dark:text-rose-400">required</span>
+        </Show>
+        <Show when={hasCopyableSchema(props.info)}>
+          <CopyButton
+            testId="copy-request-body-schema"
+            text={copyText}
+            label="Copy schema"
+            class="ml-auto"
+          />
         </Show>
       </div>
       <Show when={props.info.description}>
@@ -78,9 +94,12 @@ export function ResponsesSchemaView(props: ResponsesSchemaViewProps) {
           Responses
         </h4>
         <For each={props.responses}>
-          {(response) => (
+          {(response) => {
+            const copyText = () => formatResponseSchemaForCopy(response)
+
+            return (
             <div class="rounded border border-zinc-300 dark:border-zinc-700">
-              <div class="flex items-center gap-2 border-b border-zinc-300 px-2 py-1 dark:border-zinc-700">
+              <div class="flex flex-wrap items-center gap-2 border-b border-zinc-300 px-2 py-1 dark:border-zinc-700">
                 <span
                   class={`rounded px-1.5 py-0.5 text-xs font-semibold ${
                     response.status.startsWith('2')
@@ -94,6 +113,14 @@ export function ResponsesSchemaView(props: ResponsesSchemaViewProps) {
                 </span>
                 <Show when={response.description}>
                   <span class="text-xs text-zinc-600 dark:text-zinc-400">{response.description}</span>
+                </Show>
+                <Show when={hasCopyableSchema(response)}>
+                  <CopyButton
+                    testId={`copy-response-schema-${response.status}`}
+                    text={copyText}
+                    label="Copy schema"
+                    class="ml-auto"
+                  />
                 </Show>
               </div>
               <div class="space-y-2 p-2">
@@ -113,7 +140,8 @@ export function ResponsesSchemaView(props: ResponsesSchemaViewProps) {
                 </Show>
               </div>
             </div>
-          )}
+            )
+          }}
         </For>
       </section>
     </Show>

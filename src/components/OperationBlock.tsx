@@ -500,14 +500,15 @@ export function OperationBlock(props: OperationBlockProps) {
                       <button
                         type="button"
                         data-testid="download-response"
+                        title="Download"
+                        aria-label="Download"
                         onClick={(event) => {
                           event.stopPropagation()
                           downloadFile(res())
                         }}
-                        class="inline-flex items-center gap-1 rounded border border-zinc-400 px-2 py-0.5 text-xs font-medium text-zinc-700 hover:bg-white dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                        class="inline-flex items-center rounded border border-zinc-400 p-1 text-zinc-700 hover:bg-white dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
                       >
                         <Download size={12} />
-                        Download
                       </button>
                     </Show>
                     <Show when={!res().isFile || res().copyText}>
