@@ -1,5 +1,9 @@
 import type { ParamInputMeta } from './param-schema'
-import { appendQueryParam } from './param-schema'
+import {
+  appendQueryParam,
+  serializeHeaderParamValue,
+  serializePathParamValue,
+} from './param-serialization'
 
 export function resolveServerUrl(serverUrl: string, specUrl: string): string {
   if (/^https?:\/\//i.test(serverUrl)) return serverUrl
@@ -19,9 +23,9 @@ export function buildUrl(
   for (const param of defs) {
     const value = values[param.name] ?? ''
     if (param.in === 'path') {
-      const trimmed = value.trim()
-      if (trimmed) {
-        resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(trimmed))
+      const serialized = serializePathParamValue(param, value)
+      if (serialized) {
+        resolvedPath = resolvedPath.replace(`{${param.name}}`, encodeURIComponent(serialized))
       }
       continue
     }
@@ -35,4 +39,22 @@ export function buildUrl(
   const url = `${base}${resolvedPath}`
   const queryString = query.toString()
   return queryString ? `${url}?${queryString}` : url
+}
+
+export function buildRequestHeaders(
+  defs: ParamInputMeta[],
+  values: Record<string, string>,
+  baseHeaders: Record<string, string> = {},
+): Record<string, string> {
+  const headers = { ...baseHeaders }
+
+  for (const param of defs) {
+    const raw = values[param.name] ?? ''
+    if (param.in === 'header') {
+      const serialized = serializeHeaderParamValue(param, raw)
+      if (serialized) headers[param.name] = serialized
+    }
+  }
+
+  return headers
 }

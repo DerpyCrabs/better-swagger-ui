@@ -76,13 +76,14 @@ function TextLikeInput(props: ParamInputProps & { type?: string; placeholder?: s
 
 export function ParamInput(props: ParamInputProps) {
   const placeholder = () => {
+    if (props.meta.example) return props.meta.example
     if (props.meta.kind === 'array') {
       if (props.meta.arrayItemEnum?.length) {
         return props.meta.arrayItemEnum.join(', ')
       }
       return 'value1, value2'
     }
-    return props.meta.example ?? props.meta.name
+    return props.meta.name
   }
 
   return (
@@ -99,6 +100,17 @@ export function ParamInput(props: ParamInputProps) {
         </Match>
         <Match when={props.meta.kind === 'array'}>
           <TextLikeInput {...props} placeholder={placeholder()} />
+        </Match>
+        <Match when={props.meta.kind === 'object'}>
+          <textarea
+            rows={3}
+            value={props.value}
+            placeholder={props.placeholder ?? '{"key":"value"}'}
+            onClick={(event) => event.stopPropagation()}
+            onInput={(event) => props.onInput(event.currentTarget.value)}
+            onBlur={() => props.onBlur?.()}
+            class={fieldClass(Boolean(props.error))}
+          />
         </Match>
         <Match when={props.meta.format === 'date'}>
           <TextLikeInput {...props} type="date" />

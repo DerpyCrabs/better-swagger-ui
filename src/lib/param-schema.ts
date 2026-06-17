@@ -4,7 +4,10 @@ import { resolveSchema, schemaTypeLabel } from './schema'
 
 type SchemaObject = OpenAPIV3.SchemaObject
 
-export type ParamInputKind = 'string' | 'integer' | 'number' | 'boolean' | 'enum' | 'array'
+export type ParamInputKind = 'string' | 'integer' | 'number' | 'boolean' | 'enum' | 'array' | 'object'
+
+import type { ParamStyle } from './param-serialization'
+import { parseParamInputValue } from './param-serialization'
 
 export interface ParamInputMeta {
   name: string
@@ -13,6 +16,8 @@ export interface ParamInputMeta {
   description?: string
   schemaType: string
   kind: ParamInputKind
+  style?: ParamStyle
+  explode?: boolean
   enumValues?: string[]
   format?: string
   minimum?: number
@@ -36,6 +41,7 @@ function schemaKind(schema: SchemaObject | null): ParamInputKind {
   if (schema.type === 'integer') return 'integer'
   if (schema.type === 'number') return 'number'
   if (schema.type === 'array') return 'array'
+  if (schema.type === 'object' || schema.properties) return 'object'
   return 'string'
 }
 
@@ -47,6 +53,7 @@ function enumStrings(values: unknown[] | undefined): string[] | undefined {
 function exampleAsString(value: unknown): string | undefined {
   if (value === undefined || value === null) return undefined
   if (Array.isArray(value)) return value.map(String).join(', ')
+  if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }
 
@@ -90,6 +97,8 @@ function buildMeta(
     description: param.description ?? resolved?.description,
     schemaType: param.schema ? schemaTypeLabel(spec, param.schema) : 'string',
     kind,
+    style: param.style as ParamInputMeta['style'],
+    explode: param.explode,
     enumValues: enumStrings(resolved?.enum),
     format: resolved?.format,
     minimum: resolved?.minimum,
@@ -232,8 +241,21 @@ export function validateParamValue(meta: ParamInputMeta, value: string): string 
 
   if (!trimmed) return null
 
+  if (meta.kind === 'object') {
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return 'Must be a JSON object'
+      }
+    } catch {
+      return 'Must be a JSON object'
+    }
+    return null
+  }
+
   if (meta.kind === 'array') {
-    const items = trimmed.split(',').map((part) => part.trim()).filter(Boolean)
+    const parsed = parseParamInputValue(meta, trimmed)
+    const items = Array.isArray(parsed) ? parsed.map(String) : []
     if (items.length === 0) {
       return meta.required ? 'Required' : null
     }
@@ -270,20 +292,4 @@ export function validateAllParams(
   return errors
 }
 
-export function appendQueryParam(
-  query: URLSearchParams,
-  meta: ParamInputMeta,
-  value: string,
-) {
-  const trimmed = value.trim()
-  if (!trimmed) return
-
-  if (meta.kind === 'array') {
-    for (const part of trimmed.split(',').map((item) => item.trim()).filter(Boolean)) {
-      query.append(meta.name, part)
-    }
-    return
-  }
-
-  query.set(meta.name, trimmed)
-}
+export { appendQueryParam } from './param-serialization'

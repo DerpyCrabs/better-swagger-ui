@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ParamInputMeta } from './param-schema'
-import { buildUrl, resolveServerUrl } from './build-request-url'
+import { buildRequestHeaders, buildUrl, resolveServerUrl } from './build-request-url'
 
 describe('resolveServerUrl', () => {
   it('returns absolute server URLs unchanged', () => {
@@ -81,5 +81,47 @@ describe('buildUrl', () => {
       { 'X-Custom': 'secret' },
     )
     expect(url).toBe('http://localhost:5199/mock-api/items')
+  })
+
+  it('builds serialized query params', () => {
+    const url = buildUrl(
+      'http://localhost:5199/mock-api',
+      'http://localhost:5199/openapi/spec.json',
+      '/search',
+      [
+        {
+          name: 'tags',
+          in: 'query',
+          required: false,
+          schemaType: 'array',
+          kind: 'array',
+          style: 'form',
+          explode: false,
+        },
+      ],
+      { tags: 'a,b,c' },
+    )
+    expect(url).toBe('http://localhost:5199/mock-api/search?tags=a%2Cb%2Cc')
+  })
+})
+
+describe('buildRequestHeaders', () => {
+  it('sets header values', () => {
+    const headers = buildRequestHeaders(
+      [
+        {
+          name: 'X-Custom',
+          in: 'header',
+          required: false,
+          schemaType: 'string',
+          kind: 'string',
+        },
+      ],
+      { 'X-Custom': 'secret' },
+      { Accept: 'application/json' },
+    )
+
+    expect(headers.Accept).toBe('application/json')
+    expect(headers['X-Custom']).toBe('secret')
   })
 })

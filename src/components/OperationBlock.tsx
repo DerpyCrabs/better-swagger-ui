@@ -7,9 +7,20 @@ import { methodColor, methodExpandedBg, methodHeaderBg } from '../lib/operations
 import {
   getRequestBodySchema,
   getResponseSchemas,
-  primaryJsonMedia,
-  schemaTypeLabel,
 } from '../lib/schema'
+import {
+  buildRequestBody,
+  defaultRequestBodyText,
+  emptyFormTexts,
+  exampleBodyData,
+  getRequestBodyMode,
+  hasTryItOutRequestBody,
+  primaryTryItOutMedia,
+  resolveMultipartFields,
+  resolveUrlEncodedFields,
+  type FormField,
+  type RequestBodyMode,
+} from '../lib/request-body'
 import { MarkdownText } from './MarkdownText'
 import { ParamInput } from './ParamInput'
 import { RequestBodyPanel, ResponsesSchemaView } from './SchemaViews'
@@ -26,7 +37,7 @@ import {
 } from '../lib/param-schema'
 import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
 import { buildAcceptHeader } from '../lib/accept-header'
-import { buildUrl } from '../lib/build-request-url'
+import { buildRequestHeaders, buildUrl } from '../lib/build-request-url'
 import { proxyFetch } from '../lib/proxy-fetch'
 import {
   dmBorder,
@@ -74,6 +85,9 @@ export function OperationBlock(props: OperationBlockProps) {
   const [paramErrors, setParamErrors] = createStore<Record<string, string>>({})
   const [body, setBody] = createSignal('{}')
   const [bodyError, setBodyError] = createSignal<string | null>(null)
+  const [uploadFile, setUploadFile] = createSignal<File | null>(null)
+  const [formTexts, setFormTexts] = createStore<Record<string, string>>({})
+  const [formFiles, setFormFiles] = createStore<Record<string, File | null>>({})
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
   const [result, setResult] = createSignal<TryItResult | null>(null)
@@ -87,32 +101,39 @@ export function OperationBlock(props: OperationBlockProps) {
   )
   const primaryBodyMedia = createMemo(() => {
     const info = requestBodyInfo()
-    return info ? primaryJsonMedia(info) : null
+    return info ? primaryTryItOutMedia(info) : null
+  })
+  const requestBodyMode = createMemo((): RequestBodyMode | null =>
+    getRequestBodyMode(primaryBodyMedia()),
+  )
+  const formFields = createMemo((): FormField[] => {
+    const media = primaryBodyMedia()
+    const mode = requestBodyMode()
+    if (!media || !mode) return []
+    if (mode === 'multipart') return resolveMultipartFields(props.spec, media)
+    if (mode === 'urlencoded') return resolveUrlEncodedFields(props.spec, media)
+    return []
   })
 
-  const defaultBodyText = () => {
-    const example = primaryBodyMedia()?.example
-    if (example === undefined || example === null) return '{}'
-    return JSON.stringify(example, null, 2)
-  }
+  const defaultBodyText = () =>
+    defaultRequestBodyText(primaryBodyMedia(), requestBodyMode())
 
-  const bodyTypeLabel = () => {
-    const media = primaryBodyMedia()
-    if (media?.schemaName) return media.schemaName
-    const schema = props.item.operation.requestBody
-    if (schema && !('$ref' in schema)) {
-      const content = Object.values(schema.content)[0]
-      if (content?.schema) return schemaTypeLabel(props.spec, content.schema)
-    }
-    return 'object'
+  const resetFormState = (fields: FormField[]) => {
+    setFormTexts(reconcile(emptyFormTexts(fields)))
+    setFormFiles(
+      reconcile(Object.fromEntries(fields.filter((field) => field.kind === 'file').map((field) => [field.name, null]))),
+    )
   }
 
   createEffect(() => {
     props.item.id
     setParamValues(reconcile(emptyParamValues(resolveParameterMeta(props.spec, props.item))))
     setParamErrors(reconcile({}))
+    const fields = formFields()
     setBody(defaultBodyText())
     setBodyError(null)
+    setUploadFile(null)
+    resetFormState(fields)
     setError(null)
     setResult(null)
     setFilePreviewUrl(null)
@@ -135,18 +156,11 @@ export function OperationBlock(props: OperationBlockProps) {
   })
 
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
-  const hasJsonRequestBody = createMemo(() => {
-    const info = requestBodyInfo()
-    return Boolean(info && primaryBodyMedia())
-  })
+  const hasEditableRequestBody = createMemo(() => hasTryItOutRequestBody(requestBodyInfo()))
 
-  const exampleBodyData = createMemo(() => {
-    try {
-      return JSON.parse(defaultBodyText())
-    } catch {
-      return defaultBodyText()
-    }
-  })
+  const exampleBodyViewerData = createMemo(() =>
+    exampleBodyData(primaryBodyMedia(), requestBodyMode()),
+  )
 
   const clearParamError = (name: string) => {
     if (!paramErrors[name]) return
@@ -177,6 +191,8 @@ export function OperationBlock(props: OperationBlockProps) {
     setParamErrors(reconcile({}))
     setBody(defaultBodyText())
     setBodyError(null)
+    setUploadFile(null)
+    resetFormState(formFields())
     setError(null)
     setResult(null)
     setFilePreviewUrl(null)
@@ -191,15 +207,30 @@ export function OperationBlock(props: OperationBlockProps) {
       return
     }
 
-    if (hasRequestBody() && props.item.method !== 'get' && props.item.method !== 'head') {
-      try {
-        JSON.parse(body())
-        setBodyError(null)
-      } catch {
-        setBodyError('Request body must be valid JSON')
+    const mode = requestBodyMode()
+    const media = primaryBodyMedia()
+    const info = requestBodyInfo()
+    const sendsBody =
+      hasRequestBody() && props.item.method !== 'get' && props.item.method !== 'head' && mode
+
+    let builtBody: ReturnType<typeof buildRequestBody> | null = null
+    if (sendsBody) {
+      builtBody = buildRequestBody({
+        mode,
+        contentType: media?.contentType ?? 'application/octet-stream',
+        required: Boolean(info?.required),
+        body: body(),
+        file: uploadFile(),
+        formFields: formFields(),
+        formTexts,
+        formFiles,
+      })
+      if (builtBody.error) {
+        setBodyError(builtBody.error)
         setError('Fix request body validation errors before executing')
         return
       }
+      setBodyError(null)
     }
 
     setLoading(true)
@@ -209,26 +240,25 @@ export function OperationBlock(props: OperationBlockProps) {
     const started = performance.now()
     const url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
 
-    const headers: Record<string, string> = {
-      Accept: buildAcceptHeader(props.item.operation),
-      ...auth.getRequestHeaders(),
-    }
-
-    for (const param of paramDefs()) {
-      const value = paramValues[param.name]
-      if (param.in === 'header' && value) {
-        headers[param.name] = value
-      }
-    }
+    const headers = buildRequestHeaders(
+      paramDefs(),
+      paramValues,
+      {
+        Accept: buildAcceptHeader(props.item.operation),
+        ...auth.getRequestHeaders(),
+      },
+    )
 
     const init: RequestInit = {
       method: props.item.method.toUpperCase(),
       headers,
     }
 
-    if (hasRequestBody() && props.item.method !== 'get' && props.item.method !== 'head') {
-      headers['Content-Type'] = 'application/json'
-      init.body = body()
+    if (sendsBody && builtBody?.body !== undefined) {
+      init.body = builtBody.body
+      if (builtBody.contentType) {
+        headers['Content-Type'] = builtBody.contentType
+      }
     }
 
     try {
@@ -253,6 +283,153 @@ export function OperationBlock(props: OperationBlockProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const validateBodyOnBlur = () => {
+    const mode = requestBodyMode()
+    if (mode !== 'json') {
+      setBodyError(null)
+      return
+    }
+    try {
+      JSON.parse(body())
+      setBodyError(null)
+    } catch {
+      setBodyError('Request body must be valid JSON')
+    }
+  }
+
+  const bodyEditorClass = () =>
+    `min-w-0 flex-1 rounded-md border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-2 dark:border-dm-border dark:bg-dm-input dark:text-dm-text ${
+      bodyError()
+        ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30 dark:border-rose-500'
+        : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
+    }`
+
+  const renderTextBodyEditor = (rows = 6) => (
+    <div class="space-y-0.5">
+      <div class="flex max-w-lg items-start gap-2">
+        <textarea
+          rows={rows}
+          value={body()}
+          onClick={(event) => event.stopPropagation()}
+          onInput={(event) => {
+            setBody(event.currentTarget.value)
+            if (bodyError()) setBodyError(null)
+          }}
+          onBlur={validateBodyOnBlur}
+          class={bodyEditorClass()}
+        />
+        <CopyButton text={body} label="Copy" class="shrink-0" />
+      </div>
+      <Show when={bodyError()}>
+        <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+      </Show>
+    </div>
+  )
+
+  const renderFileBodyEditor = () => (
+    <div class="space-y-0.5">
+      <input
+        type="file"
+        data-testid="request-body-file"
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0] ?? null
+          setUploadFile(file)
+          if (bodyError()) setBodyError(null)
+        }}
+        class="block max-w-lg text-[13px] text-zinc-800 file:mr-3 file:rounded-md file:border file:border-zinc-300 file:bg-white file:px-3 file:py-1 file:text-xs file:font-semibold file:text-zinc-800 hover:file:bg-zinc-50 dark:text-dm-text dark:file:border-dm-border dark:file:bg-dm-surface dark:file:text-dm-text dark:hover:file:bg-dm-surface-hover"
+      />
+      <Show when={uploadFile()}>
+        {(file) => (
+          <p class={`text-[11px] ${dmMuted}`}>
+            Selected: <span class="font-mono">{file().name}</span>
+          </p>
+        )}
+      </Show>
+      <Show when={bodyError()}>
+        <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+      </Show>
+    </div>
+  )
+
+  const renderFormFieldsEditor = (allowFiles: boolean) => (
+    <div class="space-y-2">
+      <For each={formFields()}>
+        {(field) => (
+          <div class="space-y-0.5">
+            <label class={`block text-[11px] font-medium ${dmParamName}`}>
+              {field.name}
+              {field.required ? <span class="text-rose-600 dark:text-rose-400"> *</span> : null}
+            </label>
+            <Show when={field.description}>
+              <p class={`text-[11px] ${dmMuted}`}>{field.description}</p>
+            </Show>
+            <Show
+              when={allowFiles && field.kind === 'file'}
+              fallback={
+                <input
+                  type="text"
+                  data-testid={`request-body-field-${field.name}`}
+                  value={formTexts[field.name] ?? ''}
+                  onClick={(event) => event.stopPropagation()}
+                  onInput={(event) => {
+                    setFormTexts(field.name, event.currentTarget.value)
+                    if (bodyError()) setBodyError(null)
+                  }}
+                  class={bodyEditorClass()}
+                />
+              }
+            >
+              <input
+                type="file"
+                data-testid={`request-body-multipart-${field.name}`}
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => {
+                  setFormFiles(field.name, event.currentTarget.files?.[0] ?? null)
+                  if (bodyError()) setBodyError(null)
+                }}
+                class="block max-w-lg text-[13px] text-zinc-800 file:mr-3 file:rounded-md file:border file:border-zinc-300 file:bg-white file:px-3 file:py-1 file:text-xs file:font-semibold file:text-zinc-800 hover:file:bg-zinc-50 dark:text-dm-text dark:file:border-dm-border dark:file:bg-dm-surface dark:file:text-dm-text dark:hover:file:bg-dm-surface-hover"
+              />
+            </Show>
+          </div>
+        )}
+      </For>
+      <Show when={bodyError()}>
+        <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+      </Show>
+    </div>
+  )
+
+  const renderBodyEditor = () => {
+    switch (requestBodyMode()) {
+      case 'text':
+        return renderTextBodyEditor()
+      case 'file':
+        return renderFileBodyEditor()
+      case 'multipart':
+        return renderFormFieldsEditor(true)
+      case 'urlencoded':
+        return renderFormFieldsEditor(false)
+      default:
+        return renderTextBodyEditor()
+    }
+  }
+
+  const renderExampleViewer = () => {
+    const mode = requestBodyMode()
+    if (mode === 'text') {
+      return (
+        <pre class={`overflow-x-auto rounded-md bg-zinc-50 px-3 py-2 text-xs whitespace-pre-wrap dark:bg-dm-surface ${dmMuted}`}>
+          {defaultBodyText() || '—'}
+        </pre>
+      )
+    }
+    if (mode === 'file' || mode === 'multipart' || mode === 'urlencoded') {
+      return <p class={`text-xs ${dmMuted}`}>Use the editor to choose files when trying it out.</p>
+    }
+    return <VirtualJsonViewer data={exampleBodyViewerData()} maxHeight="16rem" />
   }
 
   const summary = () => props.item.operation.summary ?? ''
@@ -373,9 +550,9 @@ export function OperationBlock(props: OperationBlockProps) {
           </div>
 
           <Show
-            when={paramDefs().length > 0 || (hasRequestBody() && !hasJsonRequestBody())}
+            when={paramDefs().length > 0}
             fallback={
-              <Show when={!hasJsonRequestBody()}>
+              <Show when={!hasEditableRequestBody()}>
                 <p class={`py-1 text-xs ${dmMuted}`}>No parameters</p>
               </Show>
             }
@@ -436,96 +613,19 @@ export function OperationBlock(props: OperationBlockProps) {
                       </tr>
                     )}
                   </For>
-
-                  <Show when={hasRequestBody() && !hasJsonRequestBody()}>
-                    <tr class={`${dmBorderT} align-top`}>
-                      <td class="px-2 py-2 pr-3">
-                        <div class={dmParamName}>body</div>
-                        <div class={`mt-0.5 text-[11px] leading-snug ${dmParamType}`}>
-                          <span class="font-mono">{bodyTypeLabel()}</span>
-                        </div>
-                        <div class={`mt-px text-[10px] ${dmMuted}`}>body</div>
-                      </td>
-                      <td class="px-2 py-2">
-                        <Show when={tryItOut()} fallback={<span class={dmMuted}>—</span>}>
-                          <div class="space-y-0.5">
-                            <div class="flex max-w-lg items-start gap-2">
-                              <textarea
-                                rows={4}
-                                value={body()}
-                                onClick={(event) => event.stopPropagation()}
-                                onInput={(event) => {
-                                  setBody(event.currentTarget.value)
-                                  if (bodyError()) setBodyError(null)
-                                }}
-                                onBlur={() => {
-                                  try {
-                                    JSON.parse(body())
-                                    setBodyError(null)
-                                  } catch {
-                                    setBodyError('Request body must be valid JSON')
-                                  }
-                                }}
-                                class={`min-w-0 flex-1 rounded-md border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-2 dark:border-dm-border dark:bg-dm-input dark:text-dm-text ${
-                                  bodyError()
-                                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30 dark:border-rose-500'
-                                    : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
-                                }`}
-                              />
-                              <CopyButton text={body} label="Copy" class="shrink-0" />
-                            </div>
-                            <Show when={bodyError()}>
-                              <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
-                            </Show>
-                          </div>
-                        </Show>
-                      </td>
-                    </tr>
-                  </Show>
                 </tbody>
               </table>
             </div>
           </Show>
 
-          <Show when={hasJsonRequestBody() && requestBodyInfo()}>
+          <Show when={hasEditableRequestBody() && requestBodyInfo()}>
             {(info) => (
               <RequestBodyPanel
                 spec={props.spec}
                 info={info()}
                 tryItOut={tryItOut()}
-                exampleViewer={<VirtualJsonViewer data={exampleBodyData()} maxHeight="16rem" />}
-                editor={
-                  <div class="space-y-0.5">
-                    <div class="flex max-w-lg items-start gap-2">
-                      <textarea
-                        rows={6}
-                        value={body()}
-                        onClick={(event) => event.stopPropagation()}
-                        onInput={(event) => {
-                          setBody(event.currentTarget.value)
-                          if (bodyError()) setBodyError(null)
-                        }}
-                        onBlur={() => {
-                          try {
-                            JSON.parse(body())
-                            setBodyError(null)
-                          } catch {
-                            setBodyError('Request body must be valid JSON')
-                          }
-                        }}
-                        class={`min-w-0 flex-1 rounded-md border bg-white px-2 py-1 font-mono text-[13px] text-zinc-900 outline-none focus:ring-2 dark:border-dm-border dark:bg-dm-input dark:text-dm-text ${
-                          bodyError()
-                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30 dark:border-rose-500'
-                            : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
-                        }`}
-                      />
-                      <CopyButton text={body} label="Copy" class="shrink-0" />
-                    </div>
-                    <Show when={bodyError()}>
-                      <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
-                    </Show>
-                  </div>
-                }
+                exampleViewer={renderExampleViewer()}
+                editor={renderBodyEditor()}
               />
             )}
           </Show>

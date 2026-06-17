@@ -108,4 +108,145 @@ test.describe('try it out', () => {
     await operationLocator(page, 'get:/users/{id}').getByTestId('cancel-try-it-out').click()
     await expect(operationLocator(page, 'get:/users/{id}').getByTestId('try-it-out')).toBeVisible()
   })
+
+  test('sends text/plain body', async ({ page }) => {
+    let body = ''
+    let contentType = ''
+
+    await mockApi(page, async (route) => {
+      body = route.request().postData() ?? ''
+      contentType = route.request().headers()['content-type'] ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: 'ok',
+      })
+    })
+
+    await loadSpec(page, specUrl('request-body-media.json'))
+    await expandOperation(page, 'post:/notes')
+    await openTryItOut(page, 'post:/notes')
+    const op = operationLocator(page, 'post:/notes')
+    await op.locator('textarea').fill('Plain note text')
+    await executeTryItOut(page, 'post:/notes')
+
+    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    expect(contentType).toContain('text/plain')
+    expect(body).toBe('Plain note text')
+  })
+
+  test('sends binary file upload', async ({ page }) => {
+    let body = ''
+    let contentType = ''
+
+    await mockApi(page, async (route) => {
+      body = route.request().postData() ?? ''
+      contentType = route.request().headers()['content-type'] ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await loadSpec(page, specUrl('request-body-media.json'))
+    await expandOperation(page, 'post:/binary')
+    await openTryItOut(page, 'post:/binary')
+    const op = operationLocator(page, 'post:/binary')
+    await op.getByTestId('request-body-file').setInputFiles({
+      name: 'payload.bin',
+      mimeType: 'application/octet-stream',
+      buffer: Buffer.from('binary-data'),
+    })
+    await executeTryItOut(page, 'post:/binary')
+
+    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    expect(contentType).toContain('application/octet-stream')
+    expect(body).toBe('binary-data')
+  })
+
+  test('sends multipart form upload', async ({ page }) => {
+    let body = ''
+    let contentType = ''
+
+    await mockApi(page, async (route) => {
+      body = route.request().postData() ?? ''
+      contentType = route.request().headers()['content-type'] ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await loadSpec(page, specUrl('request-body-media.json'))
+    await expandOperation(page, 'post:/upload')
+    await openTryItOut(page, 'post:/upload')
+    const op = operationLocator(page, 'post:/upload')
+    await op.getByTestId('request-body-multipart-file').setInputFiles({
+      name: 'photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('png-bytes'),
+    })
+    await op.locator('input[type=text]').fill('A profile photo')
+    await executeTryItOut(page, 'post:/upload')
+
+    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    expect(contentType).toContain('multipart/form-data')
+    expect(body).toContain('photo.png')
+    expect(body).toContain('A profile photo')
+  })
+
+  test('sends urlencoded form body', async ({ page }) => {
+    let body = ''
+    let contentType = ''
+
+    await mockApi(page, async (route) => {
+      body = route.request().postData() ?? ''
+      contentType = route.request().headers()['content-type'] ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await loadSpec(page, specUrl('request-body-media.json'))
+    await expandOperation(page, 'post:/form')
+    await openTryItOut(page, 'post:/form')
+    const op = operationLocator(page, 'post:/form')
+    await op.getByTestId('request-body-field-username').fill('demo')
+    await op.getByTestId('request-body-field-password').fill('secret')
+    await executeTryItOut(page, 'post:/form')
+
+    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    expect(contentType).toContain('application/x-www-form-urlencoded')
+    expect(body).toBe('username=demo&password=secret')
+  })
+
+  test('serializes deepObject and collapsed array query params', async ({ page }) => {
+    let capturedUrl = ''
+
+    await mockApi(page, async (route) => {
+      capturedUrl = route.request().url()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await loadSpec(page, specUrl('params-serialization.json'))
+    await expandOperation(page, 'get:/search')
+    await openTryItOut(page, 'get:/search')
+    const op = operationLocator(page, 'get:/search')
+    await op.getByPlaceholder('a,b,c').fill('x,y')
+    await op.locator('textarea').fill('{"role":"admin","status":"active"}')
+    await executeTryItOut(page, 'get:/search')
+
+    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    expect(capturedUrl).toContain('tags=x%2Cy')
+    expect(capturedUrl).toContain('filter%5Brole%5D=admin')
+    expect(capturedUrl).toContain('filter%5Bstatus%5D=active')
+  })
 })

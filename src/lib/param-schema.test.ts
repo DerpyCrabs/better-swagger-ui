@@ -19,7 +19,7 @@ function getUserOp() {
 }
 
 describe('resolveParameterMeta', () => {
-  it('includes path, query, header and excludes cookie', () => {
+  it('includes path, query, and header parameters', () => {
     const item = getUserOp()
     const defs = resolveParameterMeta(spec, item)
     const names = defs.map((d) => d.name)
