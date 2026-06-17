@@ -238,16 +238,22 @@ export function OperationBlock(props: OperationBlockProps) {
     setResult(null)
 
     const started = performance.now()
-    const url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
+    let url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
 
-    const headers = buildRequestHeaders(
+    let headers = buildRequestHeaders(
       paramDefs(),
       paramValues,
       {
         Accept: buildAcceptHeader(props.item.operation),
-        ...auth.getRequestHeaders(),
       },
     )
+
+    const authRequest = auth.applyToRequest(url, headers)
+    url = authRequest.url
+    headers = authRequest.headers
+    for (const cookie of authRequest.cookies) {
+      document.cookie = `${cookie.name}=${encodeURIComponent(cookie.value)}; path=/`
+    }
 
     const init: RequestInit = {
       method: props.item.method.toUpperCase(),

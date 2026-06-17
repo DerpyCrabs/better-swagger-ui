@@ -462,6 +462,72 @@ function BearerForm(props: {
   )
 }
 
+function BasicForm(props: {
+  scheme: Extract<SecuritySchemeInfo, { kind: 'http-basic' }>
+  onAuthorized?: () => void
+}) {
+  const auth = useAuth()
+  const formId = () => `basic-${props.scheme.id}`
+  const [username, setUsername] = createSignal('')
+  const [password, setPassword] = createSignal('')
+  const authorized = () => auth.isAuthorized(props.scheme.id)
+
+  useSchemeFooterRegistration(() => ({
+    schemeId: props.scheme.id,
+    testId: `${props.scheme.id}-authorize`,
+    formId: formId(),
+    authorized,
+    loading: () => false,
+    onLogout: () => auth.logout(props.scheme.id),
+  }))
+
+  return (
+    <SchemeCard>
+      <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        {props.scheme.id} (HTTP Basic)
+      </h3>
+
+      <Show when={authorized()}>
+        <AuthorizedBadge />
+      </Show>
+
+      <Show when={!authorized()}>
+        <form
+          id={formId()}
+          class="space-y-4"
+          autocomplete="on"
+          onSubmit={(event) => {
+            event.preventDefault()
+            auth.authorizeBasic(props.scheme.id, username(), password())
+            props.onAuthorized?.()
+          }}
+        >
+          <FormField label="Username">
+            <input
+              type="text"
+              name="basic_username"
+              autocomplete="username"
+              value={username()}
+              onInput={(event) => setUsername(event.currentTarget.value)}
+              class={fieldInputClass}
+            />
+          </FormField>
+          <FormField label="Password">
+            <input
+              type="password"
+              name="basic_password"
+              autocomplete="current-password"
+              value={password()}
+              onInput={(event) => setPassword(event.currentTarget.value)}
+              class={fieldInputClass}
+            />
+          </FormField>
+        </form>
+      </Show>
+    </SchemeCard>
+  )
+}
+
 function SchemeForm(props: { scheme: SecuritySchemeInfo; onAuthorized?: () => void }) {
   if (props.scheme.kind === 'oauth2-password') {
     return <OAuthPasswordForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
@@ -474,6 +540,9 @@ function SchemeForm(props: { scheme: SecuritySchemeInfo; onAuthorized?: () => vo
   }
   if (props.scheme.kind === 'http-bearer') {
     return <BearerForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
+  }
+  if (props.scheme.kind === 'http-basic') {
+    return <BasicForm scheme={props.scheme} onAuthorized={props.onAuthorized} />
   }
   return null
 }

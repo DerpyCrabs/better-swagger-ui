@@ -2,11 +2,13 @@ import type { TokenResponse } from './oauth-token'
 
 export interface StoredAuthEntry {
   schemeId: string
-  type: 'bearer' | 'apiKey'
+  type: 'bearer' | 'apiKey' | 'basic'
   token: string
   expiresAt?: number
   apiKeyName?: string
   apiKeyIn?: 'header' | 'query' | 'cookie'
+  username?: string
+  password?: string
 }
 
 function decodeJwtExpiry(accessToken: string): number | undefined {

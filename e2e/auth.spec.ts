@@ -30,7 +30,7 @@ test.describe('authorization', () => {
 
     await page.getByTestId('authorize-button').click()
     await expect(page.getByTestId('authorize-dialog')).toBeVisible()
-    await page.getByPlaceholder('X-API-Key').fill('secret-key')
+    await page.getByPlaceholder('X-API-Key').first().fill('secret-key')
     await page.getByTestId('ApiKeyAuth-authorize').click()
 
     await expandOperation(page, 'get:/secure')
@@ -108,6 +108,67 @@ test.describe('authorization', () => {
       { timeout: 15_000 },
     )
     expect(headers.authorization).toBe('Bearer oauth-access')
+  })
+
+  test('sends HTTP Basic credentials after authorize', async ({ page }) => {
+    let headers: Record<string, string> = {}
+
+    await mockApi(page, async (route) => {
+      headers = route.request().headers()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await page.getByTestId('authorize-button').click()
+    await page.locator('input[name="basic_username"]').fill('alice')
+    await page.locator('input[name="basic_password"]').fill('secret')
+    await page.getByTestId('BasicAuth-authorize').click()
+
+    await expandOperation(page, 'get:/secure')
+    await openTryItOut(page, 'get:/secure')
+    await executeTryItOut(page, 'get:/secure')
+
+    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
+      '200',
+      { timeout: 10_000 },
+    )
+    expect(headers.authorization).toBe(`Basic ${Buffer.from('alice:secret').toString('base64')}`)
+  })
+
+  test('sends query and cookie api keys after authorize', async ({ page }) => {
+    let requestUrl = ''
+    let headers: Record<string, string> = {}
+
+    await mockApi(page, async (route) => {
+      requestUrl = route.request().url()
+      headers = route.request().headers()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await page.getByTestId('authorize-button').click()
+    await page.getByPlaceholder('api_key').fill('query-secret')
+    await page.getByTestId('QueryApiKey-authorize').click()
+    await page.getByTestId('authorize-button').click()
+    await page.getByPlaceholder('session').fill('cookie-secret')
+    await page.getByTestId('CookieApiKey-authorize').click()
+
+    await expandOperation(page, 'get:/public')
+    await openTryItOut(page, 'get:/public')
+    await executeTryItOut(page, 'get:/public')
+
+    await expect(operationLocator(page, 'get:/public').getByTestId('response-status')).toContainText(
+      '200',
+      { timeout: 10_000 },
+    )
+    expect(requestUrl).toContain('api_key=query-secret')
+    expect(headers.cookie).toContain('session=cookie-secret')
   })
 
   test('logout clears authorization', async ({ page }) => {

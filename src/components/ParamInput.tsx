@@ -105,7 +105,7 @@ export function ParamInput(props: ParamInputProps) {
           <textarea
             rows={3}
             value={props.value}
-            placeholder={props.placeholder ?? '{"key":"value"}'}
+            placeholder={props.meta.example ?? '{"key":"value"}'}
             onClick={(event) => event.stopPropagation()}
             onInput={(event) => props.onInput(event.currentTarget.value)}
             onBlur={() => props.onBlur?.()}

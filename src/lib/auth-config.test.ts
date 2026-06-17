@@ -37,13 +37,14 @@ describe('parseSecuritySchemes', () => {
     const kinds = schemes.map((s) => s.kind)
     expect(kinds).toContain('apiKey')
     expect(kinds).toContain('http-bearer')
+    expect(kinds).toContain('http-basic')
     expect(kinds).toContain('oauth2-password')
     expect(kinds).toContain('oauth2-client-credentials')
   })
 
-  it('skips $ref schemes', () => {
+  it('resolves $ref security schemes', () => {
     const schemes = parseSecuritySchemes(spec, null)
-    expect(schemes.some((s) => s.id === 'RefScheme')).toBe(false)
+    expect(schemes.some((s) => s.id === 'RefScheme' && s.kind === 'apiKey')).toBe(true)
   })
 
   it('skips unsupported oauth flows', () => {

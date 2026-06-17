@@ -24,6 +24,7 @@ import {
   fetchPasswordToken,
   type ClientCredentialsLocation,
 } from './oauth-token'
+import { applyAuthToRequest } from './auth-request'
 
 export type AuthEntry = StoredAuthEntry
 
@@ -33,6 +34,11 @@ interface AuthContextValue {
   isAuthorized: (schemeId: string) => boolean
   hasAnyScheme: () => boolean
   getRequestHeaders: () => Record<string, string>
+  applyToRequest: (url: string, headers: Record<string, string>) => {
+    url: string
+    headers: Record<string, string>
+    cookies: Array<{ name: string; value: string }>
+  }
   authorizeOAuthPassword: (input: {
     schemeId: string
     username: string
@@ -49,6 +55,7 @@ interface AuthContextValue {
   }) => Promise<void>
   authorizeApiKey: (schemeId: string, value: string) => void
   authorizeBearer: (schemeId: string, token: string) => void
+  authorizeBasic: (schemeId: string, username: string, password: string) => void
   logout: (schemeId: string) => void
   logoutAll: () => void
 }
@@ -94,17 +101,9 @@ export function AuthProvider(
       return Boolean(entry && isAuthEntryValid(entry))
     },
     getRequestHeaders: () => {
-      const headers: Record<string, string> = {}
-      for (const entry of validEntries().values()) {
-        if (!isAuthEntryValid(entry)) continue
-        if (entry.type === 'bearer') {
-          headers.Authorization = `Bearer ${entry.token}`
-        } else if (entry.type === 'apiKey' && entry.apiKeyIn === 'header' && entry.apiKeyName) {
-          headers[entry.apiKeyName] = entry.token
-        }
-      }
-      return headers
+      return applyAuthToRequest('', {}, validEntries().values()).headers
     },
+    applyToRequest: (url, headers) => applyAuthToRequest(url, headers, validEntries().values()),
     authorizeOAuthPassword: async (input) => {
       const scheme = schemes().find((item) => item.id === input.schemeId)
       if (!scheme || scheme.kind !== 'oauth2-password') {
@@ -179,6 +178,22 @@ export function AuthProvider(
           type: 'bearer',
           token,
           expiresAt: resolveTokenExpiry({}, token),
+        })
+        return next
+      })
+    },
+    authorizeBasic: (schemeId, username, password) => {
+      const scheme = schemes().find((item) => item.id === schemeId)
+      if (!scheme || scheme.kind !== 'http-basic') return
+
+      updateEntries((current) => {
+        const next = new Map(current)
+        next.set(schemeId, {
+          schemeId,
+          type: 'basic',
+          token: '',
+          username,
+          password,
         })
         return next
       })

@@ -54,5 +54,5 @@ E2E tests use OpenAPI fixtures in `tests/fixtures/`, served by the dev server at
 
 ## Limitations (MVP)
 
-- No auth flows beyond OAuth2 password/client credentials from `swagger-initializer.js`
+- No OAuth redirect flows (authorization code, implicit, OpenID Connect)
 - Cross-origin specs require CORS on the API host in production builds
