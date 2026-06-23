@@ -10,7 +10,7 @@ interface DefinitionSelectorProps {
 
 export function DefinitionSelector(props: DefinitionSelectorProps) {
   return (
-    <Show when={props.definitions.length > 1}>
+    <Show when={props.definitions.length > 0}>
       <div class="relative shrink-0">
         <select
           data-testid="definition-select"

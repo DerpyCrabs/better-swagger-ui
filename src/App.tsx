@@ -4,6 +4,12 @@ import { ApiDocument } from './components/ApiDocument'
 import { AppHeader } from './components/AppHeader'
 import { AuthProvider } from './lib/auth-context'
 import { readRoute, subscribeRoute, writeRoute } from './lib/router'
+import {
+  findSchemaLinkMatch,
+  loadSchemaLinkCatalog,
+  persistSchemaLinkCatalog,
+  type SchemaLinkCatalog,
+} from './lib/schema-links'
 import type { SpecDefinition } from './lib/spec-definitions'
 import { normalizeSourceUrl, type SpecQuerySource } from './lib/spec-query'
 import { useSpecQuery } from './lib/use-spec-query'
@@ -33,6 +39,8 @@ function App() {
   )
   const [textSource, setTextSource] = createSignal<{ label: string; text: string } | null>(null)
   const [expandedOp, setExpandedOp] = createSignal<string | null>(initialRoute.op)
+  const [schemaLinkCatalog, setSchemaLinkCatalog] =
+    createSignal<SchemaLinkCatalog>(loadSchemaLinkCatalog())
   const initialOp = initialRoute.op
 
   const definition = () => route().definition
@@ -62,7 +70,20 @@ function App() {
   })
 
   createEffect(() => {
+    const url = sourceUrl()
+    if (url) {
+      const linkTitle = findSchemaLinkMatch(schemaLinkCatalog(), url)?.label
+      if (linkTitle) {
+        document.title = linkTitle
+        return
+      }
+    }
+
     document.title = domainFromUrl(headerUrl()) ?? 'Better Swagger UI'
+  })
+
+  createEffect(() => {
+    persistSchemaLinkCatalog(schemaLinkCatalog())
   })
 
   const syncRoute = (url: string, op: string | null, nextDefinition: string | null) => {
@@ -161,9 +182,11 @@ function App() {
           specLoaded={!!specQuery.data}
           definitions={definitions()}
           definition={selectedDefinition()}
+          schemaLinkCatalog={schemaLinkCatalog()}
           onLoad={handleLoad}
           onLoadContent={handleLoadContent}
           onDefinitionChange={handleDefinitionChange}
+          onSchemaLinkCatalogChange={setSchemaLinkCatalog}
         />
 
         <Show when={specError()}>

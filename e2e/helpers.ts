@@ -82,6 +82,12 @@ export async function clearThemeStorage(page: Page) {
   })
 }
 
+export async function clearSchemaLinksStorage(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('better-swagger-schema-links')
+  })
+}
+
 /** Builds a multi-megabyte JSON payload that falls back to the flat virtualized viewer. */
 export function buildLargeJsonBody(lineCount = 2500, padLength = 1300): string {
   const lines = Array.from({ length: lineCount }, (_, index) =>

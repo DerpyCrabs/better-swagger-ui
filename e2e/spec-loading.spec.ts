@@ -34,6 +34,12 @@ test.describe('spec loading', () => {
     await expect(page.getByTestId('api-title')).toHaveText('Definition A')
   })
 
+  test('loads definitions from nested context path via initializer configUrl', async ({ page }) => {
+    await loadSpec(page, `${FIXTURE_PATH}/nested-app/swagger-ui/index.html`)
+    await expect(page.getByTestId('definition-select')).toBeVisible()
+    await expect(page.getByTestId('api-title')).toHaveText('Definition A')
+  })
+
   test('switches definition and updates title', async ({ page }) => {
     await loadSpec(page, `${FIXTURE_PATH}/swagger-ui/config-url/index.html`)
     await page.getByTestId('definition-select').selectOption('API B')

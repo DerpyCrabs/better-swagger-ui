@@ -1,5 +1,5 @@
 import type { OpenAPIV3 } from 'openapi-types'
-import { fetchText } from './fetch-utils'
+import { loadSwaggerInitializer } from './swagger-initializer'
 
 export interface InitOAuthConfig {
   clientId?: string
@@ -71,11 +71,6 @@ function resolveSecurityScheme(
   return scheme
 }
 
-function swaggerUiBasePath(pathname: string): string {
-  const match = pathname.match(/^(.*?)\/swagger-ui\/?/i)
-  return match?.[1] ?? ''
-}
-
 export function parseInitOAuth(script: string): InitOAuthConfig | null {
   const match = script.match(/initOAuth\s*\(\s*(\{[\s\S]*?\})\s*\)/)
   if (!match?.[1]) return null
@@ -88,25 +83,9 @@ export function parseInitOAuth(script: string): InitOAuthConfig | null {
 }
 
 export async function loadInitOAuth(sourceUrl: string): Promise<InitOAuthConfig | null> {
-  const pageUrl = new URL(sourceUrl.trim())
-  const basePath = swaggerUiBasePath(pageUrl.pathname)
-  const initializerPaths = [
-    `${pageUrl.origin}${basePath}/swagger-ui/swagger-initializer.js`,
-    `${pageUrl.origin}/swagger-ui/swagger-initializer.js`,
-    `${pageUrl.origin}${basePath}/swagger-initializer.js`,
-  ]
-
-  for (const initializerUrl of initializerPaths) {
-    try {
-      const text = await fetchText(initializerUrl)
-      const config = parseInitOAuth(text)
-      if (config) return config
-    } catch {
-      // try next path
-    }
-  }
-
-  return null
+  const script = await loadSwaggerInitializer(sourceUrl)
+  if (!script) return null
+  return parseInitOAuth(script.text)
 }
 
 export function parseSecuritySchemes(

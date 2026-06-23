@@ -1,9 +1,12 @@
-import { createEffect, createSignal, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, Show } from 'solid-js'
 import { LoaderCircle, Upload } from '../icons'
 import { looksLikeSpecText } from '../lib/parse-spec'
+import { findSchemaLinkMatch, type SchemaLinkCatalog } from '../lib/schema-links'
 import type { SpecDefinition } from '../lib/spec-definitions'
 import { AuthorizeButton } from './AuthorizeDialog'
 import { DefinitionSelector } from './DefinitionSelector'
+import { SchemaLinkPicker } from './SchemaLinkPicker'
+import { SchemaLinkSettingsDialog } from './SchemaLinkSettingsDialog'
 import { ThemeToggle } from './ThemeToggle'
 
 interface AppHeaderProps {
@@ -12,9 +15,11 @@ interface AppHeaderProps {
   specLoaded: boolean
   definitions: SpecDefinition[]
   definition: string
+  schemaLinkCatalog: SchemaLinkCatalog
   onLoad: (url: string) => void
   onLoadContent?: (sourceLabel: string, text: string) => void
   onDefinitionChange?: (name: string) => void
+  onSchemaLinkCatalogChange: (catalog: SchemaLinkCatalog) => void
 }
 
 function isValidHttpUrl(value: string): boolean {
@@ -28,17 +33,29 @@ function isValidHttpUrl(value: string): boolean {
 
 export function AppHeader(props: AppHeaderProps) {
   let fileInput: HTMLInputElement | undefined
+  let urlInput: HTMLInputElement | undefined
   const [draft, setDraft] = createSignal(props.url)
+  const [settingsOpen, setSettingsOpen] = createSignal(false)
+  const [urlInputFocused, setUrlInputFocused] = createSignal(false)
 
   createEffect(() => {
     setDraft(props.url)
   })
+
+  const linkMatch = createMemo(() => findSchemaLinkMatch(props.schemaLinkCatalog, props.url))
+  const usingSavedLink = () => linkMatch() !== null
+
+  const releaseUrlFocus = () => {
+    setUrlInputFocused(false)
+    urlInput?.blur()
+  }
 
   const submit = (event: Event) => {
     event.preventDefault()
     const trimmed = draft().trim()
     if (isValidHttpUrl(trimmed)) {
       props.onLoad(trimmed)
+      releaseUrlFocus()
     }
   }
 
@@ -50,6 +67,7 @@ export function AppHeader(props: AppHeaderProps) {
       event.preventDefault()
       setDraft(pasted)
       props.onLoad(pasted)
+      releaseUrlFocus()
       return
     }
 
@@ -81,18 +99,32 @@ export function AppHeader(props: AppHeaderProps) {
         </span>
 
         <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3" data-testid="load-form">
+          <Show when={!urlInputFocused()}>
+            <SchemaLinkPicker
+              catalog={props.schemaLinkCatalog}
+              url={props.url}
+              matched={usingSavedLink()}
+              onSelect={props.onLoad}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+          </Show>
+
           <div class="relative min-w-0 flex-1">
             <input
+              ref={urlInput}
               type="text"
               data-testid="url-input"
               value={draft()}
               onInput={(event) => setDraft(event.currentTarget.value)}
+              onFocus={() => setUrlInputFocused(true)}
+              onBlur={() => setUrlInputFocused(false)}
               onPaste={handlePaste}
-              placeholder="Swagger UI URL or paste YAML/JSON"
+              placeholder={usingSavedLink() ? 'URL' : 'Swagger UI URL or paste YAML/JSON'}
               class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
               classList={{
                 'pr-16': props.loading || !!props.onLoadContent,
                 'pr-3': !props.loading && !props.onLoadContent,
+                'text-zinc-500 dark:text-dm-muted': usingSavedLink(),
               }}
             />
 
@@ -131,7 +163,7 @@ export function AppHeader(props: AppHeaderProps) {
           </div>
         </form>
 
-        <Show when={props.definitions.length > 1}>
+        <Show when={props.definitions.length > 0 && (!urlInputFocused() || props.loading)}>
           <DefinitionSelector
             definitions={props.definitions}
             selected={props.definition}
@@ -146,6 +178,13 @@ export function AppHeader(props: AppHeaderProps) {
           <ThemeToggle compact />
         </div>
       </div>
+
+      <SchemaLinkSettingsDialog
+        open={settingsOpen()}
+        catalog={props.schemaLinkCatalog}
+        onChange={props.onSchemaLinkCatalogChange}
+        onClose={() => setSettingsOpen(false)}
+      />
     </header>
   )
 }

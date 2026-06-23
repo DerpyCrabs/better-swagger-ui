@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { queryClient } from './query-client'
 import {
   discoverSpecDefinitions,
   isPlaceholderSpecUrl,
+  parseInitializerConfigUrl,
   parseInitializerUrls,
   pickDefinition,
   type SpecDefinition,
@@ -71,9 +73,21 @@ describe('parseInitializerUrls', () => {
     const text = `url: "https://petstore.swagger.io/v2/swagger.json"`
     expect(parseInitializerUrls(text, base)).toBeNull()
   })
+
+  it('parses quoted configUrl key in initializer', () => {
+    const text = `"configUrl" : "/nested-app/v3/api-docs/swagger-config",`
+    expect(parseInitializerConfigUrl(text, base)).toBe(
+      'http://localhost:5199/nested-app/v3/api-docs/swagger-config',
+    )
+  })
 })
 
 describe('discoverSpecDefinitions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    queryClient.clear()
+  })
+
   it('loads direct OpenAPI URL', async () => {
     mockedFetchSpec.mockResolvedValueOnce({
       openapi: '3.0.0',
@@ -115,6 +129,56 @@ describe('discoverSpecDefinitions', () => {
 
     const defs = await discoverSpecDefinitions('http://localhost:5199/swagger-ui/single/index.html')
     expect(defs[0].url).toBe('http://localhost:5199/openapi/minimal.json')
+  })
+
+  it('loads from initializer configUrl under nested context path', async () => {
+    mockedFetchText.mockResolvedValueOnce(`
+      window.ui = SwaggerUIBundle({
+        url: "",
+        "configUrl": "/nested-app/v3/api-docs/swagger-config",
+      })
+    `)
+    mockedFetchJson.mockResolvedValueOnce({
+      urls: [
+        { url: '/openapi/a.json', name: 'API A' },
+        { url: '/openapi/b.json', name: 'API B' },
+      ],
+    })
+
+    const defs = await discoverSpecDefinitions(
+      'http://localhost:5199/nested-app/swagger-ui/index.html',
+    )
+
+    expect(defs).toHaveLength(2)
+    expect(mockedFetchJson).toHaveBeenCalledWith(
+      'http://localhost:5199/nested-app/v3/api-docs/swagger-config',
+    )
+    expect(mockedFetchJson).not.toHaveBeenCalledWith('http://localhost:5199/swagger-config')
+  })
+
+  it('does not probe root swagger-config when swagger-ui has a context path', async () => {
+    mockedFetchText.mockRejectedValue(new Error('404'))
+    mockedFetchJson.mockImplementation(async (url: string) => {
+      if (url === 'http://localhost:5199/nested-app/v3/api-docs/swagger-config') {
+        return {
+          urls: [
+            { url: '/openapi/a.json', name: 'API A' },
+            { url: '/openapi/b.json', name: 'API B' },
+          ],
+        }
+      }
+      throw new Error(`unexpected config url: ${url}`)
+    })
+
+    const defs = await discoverSpecDefinitions(
+      'http://localhost:5199/nested-app/swagger-ui/index.html',
+    )
+
+    expect(defs).toHaveLength(2)
+    expect(mockedFetchJson).not.toHaveBeenCalledWith('http://localhost:5199/swagger-config')
+    expect(mockedFetchJson).not.toHaveBeenCalledWith(
+      'http://localhost:5199/v3/api-docs/swagger-config',
+    )
   })
 
   it('throws when nothing found', async () => {

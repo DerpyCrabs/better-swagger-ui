@@ -1,4 +1,5 @@
 import { fetchJson, fetchSpec, fetchText } from './fetch-utils'
+import { loadSwaggerInitializer, swaggerUiBasePath } from './swagger-initializer'
 
 export interface SpecDefinition {
   name: string
@@ -11,11 +12,6 @@ const SWAGGER_PLACEHOLDER_HOST = /petstore(\d)?\.swagger\.io/i
 
 function resolveAgainst(base: URL, value: string): string {
   return new URL(value, base).href
-}
-
-function swaggerUiBasePath(pathname: string): string {
-  const match = pathname.match(/^(.*?)\/swagger-ui\/?/i)
-  return match?.[1] ?? ''
 }
 
 function isSwaggerUiPage(pathname: string): boolean {
@@ -31,7 +27,7 @@ export function isPlaceholderSpecUrl(url: string): boolean {
 }
 
 function hasConfigUrlReference(text: string): boolean {
-  return /configUrl\s*:/.test(text)
+  return /["']?configUrl["']?\s*:/.test(text)
 }
 
 function normalizeDefinitions(
@@ -83,28 +79,26 @@ export function parseInitializerUrls(text: string, base: URL): SpecDefinition[] 
   return null
 }
 
-function parseInitializerConfigUrl(text: string, base: URL): string | null {
-  const match = text.match(/configUrl\s*:\s*["']([^"']+)["']/)
+export function parseInitializerConfigUrl(text: string, base: URL): string | null {
+  const match = text.match(/["']?configUrl["']?\s*:\s*["']([^"']+)["']/)
   if (!match?.[1]?.trim()) return null
   return resolveAgainst(base, match[1])
 }
 
-async function extractFromInitializer(initializerUrl: string): Promise<SpecDefinition[] | null> {
-  try {
-    const text = await fetchText(initializerUrl)
-    const base = new URL(initializerUrl)
+async function definitionsFromInitializerScript(
+  initializerUrl: string,
+  text: string,
+): Promise<SpecDefinition[] | null> {
+  const base = new URL(initializerUrl)
 
-    const configUrl = parseInitializerConfigUrl(text, base)
-    if (configUrl) {
-      const fromConfig = await extractFromConfig(configUrl)
-      if (fromConfig?.length) return fromConfig
-      if (hasConfigUrlReference(text)) return null
-    }
-
-    return parseInitializerUrls(text, base)
-  } catch {
-    return null
+  const configUrl = parseInitializerConfigUrl(text, base)
+  if (configUrl) {
+    const fromConfig = await extractFromConfig(configUrl)
+    if (fromConfig?.length) return fromConfig
+    if (hasConfigUrlReference(text)) return null
   }
+
+  return parseInitializerUrls(text, base)
 }
 
 async function extractFromConfig(configUrl: string): Promise<SpecDefinition[] | null> {
@@ -131,7 +125,7 @@ async function extractFromSwaggerUiPage(pageUrl: URL): Promise<SpecDefinition[] 
   try {
     const html = await fetchText(pageUrl.href)
 
-    const configMatch = html.match(/configUrl\s*:\s*["']([^"']+)["']/)
+    const configMatch = html.match(/["']?configUrl["']?\s*:\s*["']([^"']+)["']/)
     if (configMatch?.[1]) {
       const fromConfig = await extractFromConfig(resolveAgainst(pageUrl, configMatch[1]))
       if (fromConfig) return fromConfig
@@ -196,17 +190,26 @@ async function discoverFromCandidates(pageUrl: URL): Promise<SpecDefinition[] | 
   return null
 }
 
-async function discoverFromSwaggerConfig(pageUrl: URL): Promise<SpecDefinition[] | null> {
-  const basePath = swaggerUiBasePath(pageUrl.pathname)
-  const bases = basePath
-    ? [new URL(basePath, pageUrl.origin), new URL(pageUrl.origin)]
-    : [new URL(pageUrl.origin)]
+async function discoverFromInitializer(pageUrl: URL): Promise<SpecDefinition[] | null> {
+  const script = await loadSwaggerInitializer(pageUrl.href)
+  if (!script) return null
 
-  for (const base of bases) {
-    for (const configPath of SWAGGER_CONFIG_PATHS) {
-      const fromConfig = await extractFromConfig(resolveAgainst(base, configPath))
-      if (fromConfig?.length) return fromConfig
-    }
+  const definitions = await definitionsFromInitializerScript(script.url, script.text)
+  return definitions?.length ? definitions : null
+}
+
+function resolveContextPath(pageUrl: URL, path: string): string {
+  const basePath = swaggerUiBasePath(pageUrl.pathname)
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return basePath
+    ? `${pageUrl.origin}${basePath}${normalizedPath}`
+    : `${pageUrl.origin}${normalizedPath}`
+}
+
+async function discoverFromSwaggerConfig(pageUrl: URL): Promise<SpecDefinition[] | null> {
+  for (const configPath of SWAGGER_CONFIG_PATHS) {
+    const fromConfig = await extractFromConfig(resolveContextPath(pageUrl, configPath))
+    if (fromConfig?.length) return fromConfig
   }
 
   return null
@@ -239,32 +242,26 @@ export async function discoverSpecDefinitions(sourceUrl: string): Promise<SpecDe
   if (directSpec) return directSpec
 
   if (isSwaggerUiPage(pageUrl.pathname)) {
+    const fromInitializer = await discoverFromInitializer(pageUrl)
+    if (fromInitializer?.length) return fromInitializer
+
+    const fromPage = await extractFromSwaggerUiPage(pageUrl)
+    if (fromPage && fromPage.length > 1) return fromPage
+
     const fromConfig = await discoverFromSwaggerConfig(pageUrl)
     if (fromConfig?.length) return fromConfig
+
+    if (fromPage?.length) return fromPage
+
+    const fromCandidates = await discoverFromCandidates(pageUrl)
+    if (fromCandidates) return fromCandidates
+  } else {
+    const fromPage = await extractFromSwaggerUiPage(pageUrl)
+    if (fromPage?.length) return fromPage
+
+    const fromCandidates = await discoverFromCandidates(pageUrl)
+    if (fromCandidates) return fromCandidates
   }
-
-  const fromPage = await extractFromSwaggerUiPage(pageUrl)
-  if (fromPage && fromPage.length > 1) return fromPage
-
-  const basePath = swaggerUiBasePath(pageUrl.pathname)
-  const initializerPaths = [
-    `${pageUrl.origin}${basePath}/swagger-ui/swagger-initializer.js`,
-    `${pageUrl.origin}/swagger-ui/swagger-initializer.js`,
-    `${pageUrl.origin}${basePath}/swagger-initializer.js`,
-  ]
-
-  for (const initializerUrl of initializerPaths) {
-    const fromInitializer = await extractFromInitializer(initializerUrl)
-    if (fromInitializer?.length) return fromInitializer
-  }
-
-  if (fromPage?.length) return fromPage
-
-  const fromConfig = await discoverFromSwaggerConfig(pageUrl)
-  if (fromConfig?.length) return fromConfig
-
-  const fromCandidates = await discoverFromCandidates(pageUrl)
-  if (fromCandidates) return fromCandidates
 
   throw new Error(
     'Could not find OpenAPI spec. Try pasting the direct spec URL (e.g. /v3/api-docs) if the API allows cross-origin access.',
