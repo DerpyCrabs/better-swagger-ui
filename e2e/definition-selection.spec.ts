@@ -11,7 +11,7 @@ test.describe('definition selection', () => {
     await expect(select).toHaveValue('API A')
 
     await select.selectOption('API B')
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
 
     await expect(select).toHaveValue('API B')
   })
@@ -20,7 +20,7 @@ test.describe('definition selection', () => {
     await loadSpec(page, multiDefSource)
 
     await page.getByTestId('definition-select').selectOption('API B')
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
 
     await expect
       .poll(() => new URL(page.url()).searchParams.get('definition'))
@@ -33,14 +33,14 @@ test.describe('definition selection', () => {
     await loadSpec(page, multiDefSource)
 
     await page.getByTestId('definition-select').selectOption('API B')
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
     await expect(page.getByTestId('definition-select')).toHaveValue('API B')
 
     await page.getByTestId('load-form').evaluate((form) => {
       ;(form as HTMLFormElement).requestSubmit()
     })
 
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
     await expect(page.getByTestId('definition-select')).toHaveValue('API B')
     await expect
       .poll(() => new URL(page.url()).searchParams.get('definition'))
@@ -54,7 +54,7 @@ test.describe('definition selection', () => {
     await select.selectOption('API B')
 
     await expect.poll(async () => select.inputValue()).toBe('API B')
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
     await expect.poll(async () => select.inputValue()).toBe('API B')
   })
 })

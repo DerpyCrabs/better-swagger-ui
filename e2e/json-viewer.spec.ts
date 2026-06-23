@@ -3,7 +3,7 @@ import {
   buildLargeJsonBody,
   clickJsonFoldCloseOnLineContaining,
   clickJsonFoldOnLineContaining,
-  executeTryItOut,
+  executeOperation,
   expandOperation,
   expectReadOnlyFoldBrackets,
   jsonEditorContent,
@@ -11,7 +11,6 @@ import {
   largeJsonLineCount,
   loadSpec,
   mockApi,
-  openTryItOut,
   operationLocator,
   responseJsonViewer,
   specUrl,
@@ -32,8 +31,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const responseBody = operationLocator(page, 'get:/json').getByTestId('response-body')
     await expect(responseBody.getByTestId('json-viewer')).toBeVisible()
@@ -52,8 +50,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = operationLocator(page, 'get:/json')
       .getByTestId('response-body')
@@ -73,8 +70,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const content = jsonEditorContent(
       operationLocator(page, 'get:/json').getByTestId('response-body').getByTestId('json-viewer'),
@@ -107,14 +103,13 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = operationLocator(page, 'get:/json')
       .getByTestId('response-body')
       .getByTestId('json-viewer')
 
-    await expect(viewer).toBeVisible({ timeout: 15_000 })
+    await expect(viewer).toBeVisible()
 
     const renderedLines = viewer.locator('[data-testid="json-line"]')
     await expect(renderedLines).not.toHaveCount(0)
@@ -148,8 +143,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await viewer.getByTestId('json-toggle-all-folds').click()
@@ -168,8 +162,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('alpha')
@@ -191,8 +184,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await clickJsonFoldOnLineContaining(viewer, '"nested"')
@@ -216,8 +208,7 @@ test.describe('json viewer', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('secret')

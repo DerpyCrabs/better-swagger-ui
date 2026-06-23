@@ -16,11 +16,9 @@ interface ApiDocumentProps {
   loaded: LoadedSpec
   expandedOp: string | null
   scrollToOp: string | null
-  tryItOutOp: string | null
-  onTryItOutDismiss: () => void
   onScrollToOpDone: () => void
   onExpandedOpChange: (op: string | null) => void
-  onExpandAndTryItOut: (op: string) => void
+  onExpandOperation: (op: string) => void
 }
 
 function stickyHeaderHeight(): number {
@@ -172,9 +170,7 @@ export function ApiDocument(props: ApiDocumentProps) {
                           serverUrl={serverUrl()}
                           specUrl={props.loaded.specUrl}
                           expanded={props.expandedOp === item.id}
-                          autoTryItOut={props.tryItOutOp === item.id}
-                          onTryItOutDismiss={props.onTryItOutDismiss}
-                          onAuthorizeFromLock={() => props.onExpandAndTryItOut(item.id)}
+                          onAuthorizeFromLock={() => props.onExpandOperation(item.id)}
                           onToggle={() => toggleOperation(item)}
                         />
                       )}

@@ -12,10 +12,9 @@ import {
   buildRequestBody,
   defaultRequestBodyText,
   emptyFormTexts,
-  exampleBodyData,
   getRequestBodyMode,
-  hasTryItOutRequestBody,
-  primaryTryItOutMedia,
+  hasEditableRequestBody,
+  primaryRequestBodyMedia,
   resolveMultipartFields,
   resolveUrlEncodedFields,
   type FormField,
@@ -57,13 +56,11 @@ interface OperationBlockProps {
   serverUrl: string
   specUrl: string
   expanded: boolean
-  autoTryItOut: boolean
-  onTryItOutDismiss: () => void
   onAuthorizeFromLock?: () => void
   onToggle: () => void
 }
 
-interface TryItResult {
+interface ExecuteResult {
   status: number
   statusText: string
   durationMs: number
@@ -80,7 +77,6 @@ interface TryItResult {
 export function OperationBlock(props: OperationBlockProps) {
   const auth = useAuth()
   const [authorizeOpen, setAuthorizeOpen] = createSignal(false)
-  const [tryItOut, setTryItOut] = createSignal(false)
   const paramDefs = createMemo(() => resolveParameterMeta(props.spec, props.item))
   const [paramValues, setParamValues] = createStore<Record<string, string>>({})
   const [paramErrors, setParamErrors] = createStore<Record<string, string>>({})
@@ -91,7 +87,7 @@ export function OperationBlock(props: OperationBlockProps) {
   const [formFiles, setFormFiles] = createStore<Record<string, File | null>>({})
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
-  const [result, setResult] = createSignal<TryItResult | null>(null)
+  const [result, setResult] = createSignal<ExecuteResult | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = createSignal<string | null>(null)
 
   const requestBodyInfo = createMemo(() =>
@@ -102,7 +98,7 @@ export function OperationBlock(props: OperationBlockProps) {
   )
   const primaryBodyMedia = createMemo(() => {
     const info = requestBodyInfo()
-    return info ? primaryTryItOutMedia(info) : null
+    return info ? primaryRequestBodyMedia(info) : null
   })
   const requestBodyMode = createMemo((): RequestBodyMode | null =>
     getRequestBodyMode(primaryBodyMedia()),
@@ -152,16 +148,8 @@ export function OperationBlock(props: OperationBlockProps) {
     onCleanup(() => URL.revokeObjectURL(nextUrl))
   })
 
-  createEffect(() => {
-    setTryItOut(props.expanded && props.autoTryItOut)
-  })
-
   const hasRequestBody = () => Boolean(props.item.operation.requestBody)
-  const hasEditableRequestBody = createMemo(() => hasTryItOutRequestBody(requestBodyInfo()))
-
-  const exampleBodyViewerData = createMemo(() =>
-    exampleBodyData(primaryBodyMedia(), requestBodyMode()),
-  )
+  const showsRequestBodyEditor = createMemo(() => hasEditableRequestBody(requestBodyInfo()))
 
   const clearParamError = (name: string) => {
     if (!paramErrors[name]) return
@@ -186,19 +174,18 @@ export function OperationBlock(props: OperationBlockProps) {
     clearParamError(param.name)
   }
 
-  const cancelTryItOut = () => {
-    setTryItOut(false)
-    setParamValues(reconcile(emptyParamValues(paramDefs())))
-    setParamErrors(reconcile({}))
-    setBody(defaultBodyText())
-    setBodyError(null)
-    setUploadFile(null)
-    resetFormState(formFields())
-    setError(null)
-    setResult(null)
-    setFilePreviewUrl(null)
-    props.onTryItOutDismiss()
+  const handleAuthorized = () => {
+    if (props.expanded) {
+      if (result()?.status === 401) {
+        void execute()
+      }
+      return
+    }
+    props.onAuthorizeFromLock?.()
   }
+
+  const showExecuteAuthorize = () =>
+    result()?.status === 401 && auth.hasAnyScheme() && props.expanded
 
   const execute = async () => {
     const validationErrors = validateAllParams(paramDefs(), paramValues)
@@ -446,27 +433,9 @@ export function OperationBlock(props: OperationBlockProps) {
     }
   }
 
-  const renderExampleViewer = () => {
-    const mode = requestBodyMode()
-    if (mode === 'json') {
-      return <VirtualJsonViewer data={exampleBodyViewerData()} maxHeight="16rem" />
-    }
-    if (mode === 'text') {
-      return (
-        <pre class={`overflow-x-auto rounded-md bg-zinc-50 px-3 py-2 text-xs whitespace-pre-wrap dark:bg-dm-surface ${dmMuted}`}>
-          {defaultBodyText() || '—'}
-        </pre>
-      )
-    }
-    if (mode === 'file' || mode === 'multipart' || mode === 'urlencoded') {
-      return <p class={`text-xs ${dmMuted}`}>Use the editor to choose files when trying it out.</p>
-    }
-    return <VirtualJsonViewer data={exampleBodyViewerData()} maxHeight="16rem" />
-  }
-
   const summary = () => props.item.operation.summary ?? ''
 
-  const downloadFile = (res: TryItResult) => {
+  const downloadFile = (res: ExecuteResult) => {
     if (!res.blob) return
     const objectUrl = URL.createObjectURL(res.blob)
     const anchor = document.createElement('a')
@@ -536,7 +505,7 @@ export function OperationBlock(props: OperationBlockProps) {
       <AuthorizeDialog
         open={authorizeOpen()}
         onClose={() => setAuthorizeOpen(false)}
-        onAuthorized={() => props.onAuthorizeFromLock?.()}
+        onAuthorized={handleAuthorized}
       />
 
       <Show when={props.expanded}>
@@ -547,48 +516,13 @@ export function OperationBlock(props: OperationBlockProps) {
             </div>
           </Show>
 
-          <div class="mb-1 flex items-center justify-between">
-            <span class={dmSectionHeading}>
-              Parameters
-            </span>
-            <Show
-              when={tryItOut()}
-              fallback={
-                <button
-                  type="button"
-                  data-testid="try-it-out"
-                  class="rounded-md border border-zinc-300 bg-white px-3 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-surface dark:text-dm-text dark:hover:bg-dm-surface-hover"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setTryItOut(true)
-                  }}
-                >
-                  Try it out
-                </button>
-              }
-            >
-              <button
-                type="button"
-                data-testid="cancel-try-it-out"
-                class="rounded-md border border-zinc-300 bg-transparent px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-white/80 dark:border-dm-border dark:text-dm-muted dark:hover:bg-dm-surface-hover"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  cancelTryItOut()
-                }}
-              >
-                Cancel
-              </button>
-            </Show>
-          </div>
+          <Show when={paramDefs().length > 0}>
+            <div class="mb-1">
+              <span class={dmSectionHeading}>
+                Parameters
+              </span>
+            </div>
 
-          <Show
-            when={paramDefs().length > 0}
-            fallback={
-              <Show when={!hasEditableRequestBody()}>
-                <p class={`py-1 text-xs ${dmMuted}`}>No parameters</p>
-              </Show>
-            }
-          >
             <div class="overflow-x-auto rounded-md bg-white/70 dark:bg-dm-surface">
               <table class="w-full border-collapse text-[13px]">
                 <thead>
@@ -617,30 +551,18 @@ export function OperationBlock(props: OperationBlockProps) {
                           <div class={`mt-px text-[10px] ${dmMuted}`}>{param.in}</div>
                         </td>
                         <td class="px-2 py-2">
-                          <Show
-                            when={tryItOut()}
-                            fallback={
-                              <Show
-                                when={param.description}
-                                fallback={<span class={dmMuted}>—</span>}
-                              >
-                                <p class="text-zinc-700 dark:text-dm-muted">{param.description}</p>
-                              </Show>
-                            }
-                          >
-                            <Show when={param.description}>
-                              <p class={`mb-1 text-[11px] leading-tight ${dmMuted}`}>
-                                {param.description}
-                              </p>
-                            </Show>
-                            <ParamInput
-                              meta={param}
-                              value={paramValues[param.name] ?? ''}
-                              error={paramErrors[param.name]}
-                              onInput={(value) => updateParam(param.name, value)}
-                              onBlur={() => validateParam(param)}
-                            />
+                          <Show when={param.description}>
+                            <p class={`mb-1 text-[11px] leading-tight ${dmMuted}`}>
+                              {param.description}
+                            </p>
                           </Show>
+                          <ParamInput
+                            meta={param}
+                            value={paramValues[param.name] ?? ''}
+                            error={paramErrors[param.name]}
+                            onInput={(value) => updateParam(param.name, value)}
+                            onBlur={() => validateParam(param)}
+                          />
                         </td>
                       </tr>
                     )}
@@ -650,20 +572,17 @@ export function OperationBlock(props: OperationBlockProps) {
             </div>
           </Show>
 
-          <Show when={hasEditableRequestBody() && requestBodyInfo()}>
+          <Show when={showsRequestBodyEditor() && requestBodyInfo()}>
             {(info) => (
               <RequestBodyPanel
                 spec={props.spec}
                 info={info()}
-                tryItOut={tryItOut()}
-                exampleViewer={renderExampleViewer()}
                 editor={renderBodyEditor()}
               />
             )}
           </Show>
 
-          <Show when={tryItOut()}>
-            <div class="mt-2">
+          <div class="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 data-testid="execute"
@@ -681,8 +600,21 @@ export function OperationBlock(props: OperationBlockProps) {
                 )}
                 Execute
               </button>
+              <Show when={showExecuteAuthorize()}>
+                <button
+                  type="button"
+                  data-testid="execute-authorize"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setAuthorizeOpen(true)
+                  }}
+                  class="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-surface dark:text-dm-text dark:hover:bg-dm-surface-hover"
+                >
+                  <Lock size={16} />
+                  Authorize
+                </button>
+              </Show>
             </div>
-          </Show>
 
           <Show when={error()}>
             <p class="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">

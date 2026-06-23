@@ -34,7 +34,6 @@ function App() {
   const [textSource, setTextSource] = createSignal<{ label: string; text: string } | null>(null)
   const [expandedOp, setExpandedOp] = createSignal<string | null>(initialRoute.op)
   const [scrollToOp, setScrollToOp] = createSignal<string | null>(initialRoute.op)
-  const [tryItOutOp, setTryItOutOp] = createSignal<string | null>(initialRoute.op)
 
   const definition = () => route().definition
   const headerUrl = () => sourceUrl() ?? textSource()?.label ?? ''
@@ -87,7 +86,6 @@ function App() {
     setSourceUrl(trimmed)
     setExpandedOp(null)
     setScrollToOp(null)
-    setTryItOutOp(null)
     syncRoute(
       trimmed,
       null,
@@ -100,27 +98,23 @@ function App() {
     setTextSource({ label: sourceLabel, text })
     setExpandedOp(null)
     setScrollToOp(null)
-    setTryItOutOp(null)
     syncRoute('', null, null)
   }
 
   const handleDefinitionChange = (name: string) => {
     setExpandedOp(null)
     setScrollToOp(null)
-    setTryItOutOp(null)
     syncRoute(routeUrl(), null, definitionForRoute(name, definitions()))
   }
 
   const handleExpandedOpChange = (op: string | null) => {
     setExpandedOp(op)
-    setTryItOutOp(null)
     syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
-  const handleExpandAndTryItOut = (op: string) => {
+  const handleExpandOperation = (op: string) => {
     setExpandedOp(op)
     setScrollToOp(op)
-    setTryItOutOp(op)
     syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
@@ -149,7 +143,6 @@ function App() {
           setSourceUrl(trimmed)
           setExpandedOp(next.op)
           setScrollToOp(next.op)
-          setTryItOutOp(next.op)
         }
         return
       }
@@ -157,13 +150,11 @@ function App() {
       if (next.definition !== definition()) {
         setExpandedOp(null)
         setScrollToOp(null)
-        setTryItOutOp(null)
         return
       }
 
       setExpandedOp(next.op)
       setScrollToOp(next.op)
-      setTryItOutOp(next.op)
     })
   })
 
@@ -201,11 +192,9 @@ function App() {
                 loaded={data()}
                 expandedOp={expandedOp()}
                 scrollToOp={scrollToOp()}
-                tryItOutOp={tryItOutOp()}
-                onTryItOutDismiss={() => setTryItOutOp(null)}
                 onScrollToOpDone={() => setScrollToOp(null)}
                 onExpandedOpChange={handleExpandedOpChange}
-                onExpandAndTryItOut={handleExpandAndTryItOut}
+                onExpandOperation={handleExpandOperation}
               />
             </main>
           )}

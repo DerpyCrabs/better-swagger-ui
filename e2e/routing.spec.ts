@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test'
 import { loadSpec, operationLocator, specUrl, FIXTURE_PATH } from './helpers'
 
 test.describe('URL routing', () => {
-  test('deep link expands operation and opens Try it out', async ({ page }) => {
+  test('deep link expands operation', async ({ page }) => {
     await page.goto('/')
     const spec = `${new URL(page.url()).origin}${specUrl('minimal.json')}`
     await page.goto(`/?url=${encodeURIComponent(spec)}&op=${encodeURIComponent('get:/pets')}`)
-    await expect(page.getByTestId('api-title')).toHaveText('Minimal API', { timeout: 15_000 })
-    await expect(operationLocator(page, 'get:/pets').getByTestId('cancel-try-it-out')).toBeVisible()
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API')
+    await expect(operationLocator(page, 'get:/pets').getByTestId('execute')).toBeVisible()
   })
 
   test('updates op param when expanding operation', async ({ page }) => {
@@ -25,8 +25,8 @@ test.describe('URL routing', () => {
     await page.goto(
       `/?url=${encodeURIComponent(source)}&definition=${encodeURIComponent('API B')}`,
     )
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
     await page.reload()
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
   })
 })

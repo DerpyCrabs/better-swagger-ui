@@ -1,22 +1,20 @@
 import { expect, test } from '@playwright/test'
 import {
-  executeTryItOut,
+  executeOperation,
   expandOperation,
   loadSpec,
   mockApi,
-  openTryItOut,
   operationLocator,
   specUrl,
 } from './helpers'
 
-test.describe('try it out', () => {
+test.describe('execute request', () => {
   test.beforeEach(async ({ page }) => {
     await loadSpec(page, specUrl('params-full.json'))
   })
 
   test('prefills parameters from examples', async ({ page }) => {
     await expandOperation(page, 'get:/users/{id}')
-    await openTryItOut(page, 'get:/users/{id}')
     await expect(operationLocator(page, 'get:/users/{id}').locator('input').first()).toHaveValue(
       '550e8400-e29b-41d4-a716-446655440000',
     )
@@ -24,15 +22,13 @@ test.describe('try it out', () => {
 
   test('blocks execute when required param is empty', async ({ page }) => {
     await expandOperation(page, 'get:/users/{id}')
-    await openTryItOut(page, 'get:/users/{id}')
     await operationLocator(page, 'get:/users/{id}').locator('input').first().fill('')
-    await executeTryItOut(page, 'get:/users/{id}')
+    await executeOperation(page, 'get:/users/{id}')
     await expect(page.getByText('Fix parameter validation errors')).toBeVisible()
   })
 
   test('shows validation error for invalid uuid', async ({ page }) => {
     await expandOperation(page, 'get:/users/{id}')
-    await openTryItOut(page, 'get:/users/{id}')
     await operationLocator(page, 'get:/users/{id}').locator('input').first().fill('not-uuid')
     await operationLocator(page, 'get:/users/{id}').locator('input').first().blur()
     await expect(page.getByText(/valid UUID/i)).toBeVisible()
@@ -53,13 +49,12 @@ test.describe('try it out', () => {
     })
 
     await expandOperation(page, 'get:/users/{id}')
-    await openTryItOut(page, 'get:/users/{id}')
     const op = operationLocator(page, 'get:/users/{id}')
     await op.getByPlaceholder('user@example.com').fill('user@example.com')
     await op.getByPlaceholder('req-123').fill('req-abc')
-    await executeTryItOut(page, 'get:/users/{id}')
+    await executeOperation(page, 'get:/users/{id}')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(capturedUrl).toContain('/fixtures/mock-api/users/')
     expect(capturedUrl).toContain('email=user%40example.com')
     expect(capturedHeaders['x-request-id']).toBe('req-abc')
@@ -69,11 +64,11 @@ test.describe('try it out', () => {
   test('rejects invalid JSON body before fetch', async ({ page }) => {
     await loadSpec(page, specUrl('request-body.json'))
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
     const op = operationLocator(page, 'post:/items')
-    await op.getByTestId('json-text-editor').locator('.cm-content').fill('{ invalid')
-    await op.getByTestId('json-text-editor').locator('.cm-content').blur()
-    await executeTryItOut(page, 'post:/items')
+    const editor = op.getByTestId('json-text-editor')
+    await editor.getByTestId('json-textarea').fill('{ invalid')
+    await editor.getByTestId('json-textarea').blur()
+    await executeOperation(page, 'post:/items')
     await expect(op.getByText(/Fix request body validation errors/i)).toBeVisible()
   })
 
@@ -90,23 +85,20 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('request-body.json'))
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
-    await executeTryItOut(page, 'post:/items')
+    await executeOperation(page, 'post:/items')
 
     await expect(operationLocator(page, 'post:/items').getByTestId('response-status')).toContainText(
       '201',
-      { timeout: 10_000 },
     )
     expect(body).toContain('"name"')
     expect(JSON.parse(body)).toMatchObject({ name: 'Widget' })
   })
 
-  test('cancel resets try it out state', async ({ page }) => {
+  test('collapsing operation hides execute controls', async ({ page }) => {
     await expandOperation(page, 'get:/users/{id}')
-    await openTryItOut(page, 'get:/users/{id}')
     await operationLocator(page, 'get:/users/{id}').locator('input').first().fill('')
-    await operationLocator(page, 'get:/users/{id}').getByTestId('cancel-try-it-out').click()
-    await expect(operationLocator(page, 'get:/users/{id}').getByTestId('try-it-out')).toBeVisible()
+    await operationLocator(page, 'get:/users/{id}').getByRole('button').first().click()
+    await expect(operationLocator(page, 'get:/users/{id}').getByTestId('execute')).not.toBeVisible()
   })
 
   test('sends text/plain body', async ({ page }) => {
@@ -125,12 +117,11 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('request-body-media.json'))
     await expandOperation(page, 'post:/notes')
-    await openTryItOut(page, 'post:/notes')
     const op = operationLocator(page, 'post:/notes')
     await op.locator('textarea').fill('Plain note text')
-    await executeTryItOut(page, 'post:/notes')
+    await executeOperation(page, 'post:/notes')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(contentType).toContain('text/plain')
     expect(body).toBe('Plain note text')
   })
@@ -151,16 +142,15 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('request-body-media.json'))
     await expandOperation(page, 'post:/binary')
-    await openTryItOut(page, 'post:/binary')
     const op = operationLocator(page, 'post:/binary')
     await op.getByTestId('request-body-file').setInputFiles({
       name: 'payload.bin',
       mimeType: 'application/octet-stream',
       buffer: Buffer.from('binary-data'),
     })
-    await executeTryItOut(page, 'post:/binary')
+    await executeOperation(page, 'post:/binary')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(contentType).toContain('application/octet-stream')
     expect(body).toBe('binary-data')
   })
@@ -181,7 +171,6 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('request-body-media.json'))
     await expandOperation(page, 'post:/upload')
-    await openTryItOut(page, 'post:/upload')
     const op = operationLocator(page, 'post:/upload')
     await op.getByTestId('request-body-multipart-file').setInputFiles({
       name: 'photo.png',
@@ -189,9 +178,9 @@ test.describe('try it out', () => {
       buffer: Buffer.from('png-bytes'),
     })
     await op.locator('input[type=text]').fill('A profile photo')
-    await executeTryItOut(page, 'post:/upload')
+    await executeOperation(page, 'post:/upload')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(contentType).toContain('multipart/form-data')
     expect(body).toContain('photo.png')
     expect(body).toContain('A profile photo')
@@ -213,13 +202,12 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('request-body-media.json'))
     await expandOperation(page, 'post:/form')
-    await openTryItOut(page, 'post:/form')
     const op = operationLocator(page, 'post:/form')
     await op.getByTestId('request-body-field-username').fill('demo')
     await op.getByTestId('request-body-field-password').fill('secret')
-    await executeTryItOut(page, 'post:/form')
+    await executeOperation(page, 'post:/form')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(contentType).toContain('application/x-www-form-urlencoded')
     expect(body).toBe('username=demo&password=secret')
   })
@@ -238,13 +226,12 @@ test.describe('try it out', () => {
 
     await loadSpec(page, specUrl('params-serialization.json'))
     await expandOperation(page, 'get:/search')
-    await openTryItOut(page, 'get:/search')
     const op = operationLocator(page, 'get:/search')
     await op.getByPlaceholder('a,b,c').fill('x,y')
     await op.locator('textarea').fill('{"role":"admin","status":"active"}')
-    await executeTryItOut(page, 'get:/search')
+    await executeOperation(page, 'get:/search')
 
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     expect(capturedUrl).toContain('tags=x%2Cy')
     expect(capturedUrl).toContain('filter%5Brole%5D=admin')
     expect(capturedUrl).toContain('filter%5Bstatus%5D=active')

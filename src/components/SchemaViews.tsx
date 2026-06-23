@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createSignal } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { JSX } from 'solid-js'
 import type { MediaSchemaInfo, RequestBodySchemaInfo, ResponseSchemaInfo } from '../lib/schema'
@@ -71,20 +71,12 @@ const tabButtonClass = (active: boolean) =>
 interface RequestBodyPanelProps {
   spec: OpenAPIV3.Document
   info: RequestBodySchemaInfo
-  tryItOut: boolean
-  exampleViewer: JSX.Element
   editor: JSX.Element
 }
 
 export function RequestBodyPanel(props: RequestBodyPanelProps) {
-  const [tab, setTab] = createSignal<RequestBodyTab>(props.tryItOut ? 'example' : 'model')
+  const [tab, setTab] = createSignal<RequestBodyTab>('example')
   const copyText = () => formatRequestBodySchemaForCopy(props.info)
-
-  createEffect(() => {
-    if (props.tryItOut) {
-      setTab('example')
-    }
-  })
 
   return (
     <section class="mt-2 space-y-1.5 pt-1">
@@ -121,9 +113,7 @@ export function RequestBodyPanel(props: RequestBodyPanelProps) {
 
       <Show when={tab() === 'example'}>
         <div class={dmSchemaPanel}>
-          <Show when={props.tryItOut} fallback={props.exampleViewer}>
-            {props.editor}
-          </Show>
+          {props.editor}
         </div>
       </Show>
 

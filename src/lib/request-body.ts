@@ -32,7 +32,7 @@ function isBinarySchema(schema: OpenAPIV3.SchemaObject | null): boolean {
   return schema?.type === 'string' && schema.format === 'binary'
 }
 
-export function primaryTryItOutMedia(info: { media: MediaSchemaInfo[] }): MediaSchemaInfo | null {
+export function primaryRequestBodyMedia(info: { media: MediaSchemaInfo[] }): MediaSchemaInfo | null {
   const json = info.media.find((item) => item.contentType.includes('json'))
   if (json) return json
 
@@ -254,7 +254,7 @@ export function exampleBodyData(media: MediaSchemaInfo | null, mode: RequestBody
   }
 }
 
-export function hasTryItOutRequestBody(info: RequestBodySchemaInfo | null): boolean {
+export function hasEditableRequestBody(info: RequestBodySchemaInfo | null): boolean {
   if (!info) return false
-  return getRequestBodyMode(primaryTryItOutMedia(info)) !== null
+  return getRequestBodyMode(primaryRequestBodyMedia(info)) !== null
 }

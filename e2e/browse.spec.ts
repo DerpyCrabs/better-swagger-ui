@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { expandOperation, loadSpec, specUrl } from './helpers'
+import { expandOperation, loadSpec, operationLocator, specUrl } from './helpers'
 
 test.describe('browse API documentation', () => {
   test.beforeEach(async ({ page }) => {
@@ -42,24 +42,24 @@ test.describe('browse API documentation', () => {
     await expect(page.getByTestId('authorize-dialog')).toBeVisible()
     await page.getByTestId('authorize-dialog').getByText('Close', { exact: true }).click()
     await expect(op.getByTestId('operation-authorize-lock')).toBeVisible()
-    await expect(op.getByTestId('cancel-try-it-out')).not.toBeVisible()
+    await expect(op.getByTestId('execute')).not.toBeVisible()
   })
 
-  test('operation lock expands and activates try it out after authorize', async ({ page }) => {
+  test('operation lock expands operation after authorize', async ({ page }) => {
     await page.getByTestId('tag-section-beta').getByRole('button').click()
     const op = page.getByTestId('operation-get:/beta/x')
     await op.getByTestId('operation-authorize-lock').click()
     await page.getByPlaceholder('X-API-Key').fill('beta-key')
     await page.getByTestId('ApiKeyAuth-authorize').click()
     await expect(page.getByTestId('authorize-dialog')).not.toBeVisible()
-    await expect(op.getByTestId('cancel-try-it-out')).toBeVisible()
-    await expect(op.getByTestId('try-it-out')).not.toBeVisible()
+    await expect(op.getByTestId('execute')).toBeVisible()
   })
 
   test('copies request and response schemas for AI mocks', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await loadSpec(page, specUrl('request-body.json'))
     await expandOperation(page, 'post:/items')
+    await operationLocator(page, 'post:/items').getByTestId('request-body-tab-model').click()
 
     await page.getByTestId('copy-request-body-schema').click()
     const bodySchema = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()))

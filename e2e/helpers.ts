@@ -13,7 +13,7 @@ export async function absoluteFixtureUrl(page: Page, path: string) {
 
 export async function loadSpec(page: Page, url: string) {
   await page.goto('/')
-  await page.getByTestId('url-input').waitFor({ timeout: 10_000 })
+  await page.getByTestId('url-input').waitFor()
 
   const target = url.startsWith('http')
     ? url
@@ -25,7 +25,7 @@ export async function loadSpec(page: Page, url: string) {
   await page.getByTestId('load-form').evaluate((form) => {
     ;(form as HTMLFormElement).requestSubmit()
   })
-  await page.getByTestId('api-title').waitFor({ timeout: 15_000 })
+  await page.getByTestId('api-title').waitFor()
 }
 
 export function operationLocator(page: Page, opId: string) {
@@ -46,15 +46,10 @@ export async function expandOperation(page: Page, opId: string) {
 
   op = operationLocator(page, opId)
   await op.getByRole('button').first().click()
-  await op.getByText('Parameters', { exact: true }).waitFor()
+  await op.getByTestId('execute').waitFor()
 }
 
-export async function openTryItOut(page: Page, opId: string) {
-  const op = operationLocator(page, opId)
-  await op.getByTestId('try-it-out').click()
-}
-
-export async function executeTryItOut(page: Page, opId: string) {
+export async function executeOperation(page: Page, opId: string) {
   const op = operationLocator(page, opId)
   await op.getByTestId('execute').click()
 }

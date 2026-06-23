@@ -3,15 +3,12 @@ import {
   clickJsonFoldCloseOnLineContaining,
   clickJsonFoldOnLineContaining,
   expectEditableFoldLayers,
-  expectReadOnlyFoldBrackets,
   expandOperation,
   jsonEditorHasHighlightMarkup,
   jsonEditorInnerText,
   jsonEditorMirrorOffset,
   loadSpec,
-  openTryItOut,
   operationLocator,
-  requestBodyExampleViewer,
   requestBodyJsonEditor,
   specUrl,
 } from './helpers'
@@ -21,9 +18,8 @@ test.describe('request body json editor', () => {
     await loadSpec(page, specUrl('request-body.json'))
   })
 
-  test('shows foldable editor in try it out mode', async ({ page }) => {
+  test('shows foldable editor when expanded', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await expect(editor).toBeVisible()
@@ -35,7 +31,6 @@ test.describe('request body json editor', () => {
 
   test('supports selecting text across the request body', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     const textarea = editor.getByTestId('json-textarea')
@@ -50,7 +45,6 @@ test.describe('request body json editor', () => {
 
   test('does not render doubled fold brackets in editable mode', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const bracketCounts = await editor.getByTestId('json-content').evaluate((content) => {
@@ -73,7 +67,6 @@ test.describe('request body json editor', () => {
 
   test('keeps syntax highlighting and overlay while resizing the request body editor', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const textarea = editor.getByTestId('json-textarea')
@@ -102,7 +95,6 @@ test.describe('request body json editor', () => {
 
   test('keeps highlight layers aligned with textarea scroll position', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const textarea = editor.getByTestId('json-textarea')
@@ -120,7 +112,6 @@ test.describe('request body json editor', () => {
 
   test('updates request body content when editing json', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const textarea = editor.getByTestId('json-textarea')
@@ -135,7 +126,6 @@ test.describe('request body json editor', () => {
 
   test('shows validation error for invalid json on blur', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const op = operationLocator(page, 'post:/items')
     const textarea = requestBodyJsonEditor(page, 'post:/items').getByTestId('json-textarea')
@@ -148,7 +138,6 @@ test.describe('request body json editor', () => {
 
   test('clears validation error after fixing json', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const op = operationLocator(page, 'post:/items')
     const textarea = requestBodyJsonEditor(page, 'post:/items').getByTestId('json-textarea')
@@ -169,7 +158,6 @@ test.describe('request body json editor', () => {
 
   test('supports vertical resize on the request body textarea', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     const resize = await editor.getByTestId('json-textarea-resize').evaluate((element) => getComputedStyle(element).resize)
@@ -178,7 +166,6 @@ test.describe('request body json editor', () => {
 
   test('shows copy in the editor toolbar', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await expect(editor.getByTitle('Copy')).toBeVisible()
@@ -186,7 +173,6 @@ test.describe('request body json editor', () => {
 
   test('formats compact json in the request body editor', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const textarea = editor.getByTestId('json-textarea')
@@ -218,7 +204,6 @@ test.describe('request body json editor', () => {
 
   test('disables format for invalid json', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
     const textarea = editor.getByTestId('json-textarea')
@@ -229,7 +214,6 @@ test.describe('request body json editor', () => {
 
   test('collapses nested request body json', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
@@ -240,7 +224,6 @@ test.describe('request body json editor', () => {
 
   test('collapses and expands from the opening bracket in editable mode', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"a"')
@@ -254,7 +237,6 @@ test.describe('request body json editor', () => {
 
   test('collapses and expands from the collapsed preview in editable mode', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await clickJsonFoldOnLineContaining(editor, '"tags"')
@@ -266,7 +248,6 @@ test.describe('request body json editor', () => {
 
   test('collapses and expands nested folds from toolbar without hiding root', async ({ page }) => {
     await expandOperation(page, 'post:/items')
-    await openTryItOut(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
@@ -279,57 +260,51 @@ test.describe('request body json editor', () => {
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
   })
 
-  test('shows foldable example value before try it out', async ({ page }) => {
+  test('shows foldable editor on example tab when expanded', async ({ page }) => {
     await expandOperation(page, 'post:/items')
 
     const op = operationLocator(page, 'post:/items')
     await op.getByTestId('request-body-tab-example').click()
 
-    const viewer = op.locator('section').filter({ hasText: 'Request body' }).getByTestId('json-viewer')
-    await expect(viewer).toBeVisible()
-    await expect(viewer.getByTestId('json-toggle-all-folds')).toBeVisible()
-    await expect(viewer.locator('[data-testid="json-line"]')).not.toHaveCount(0)
-    await expect(viewer.getByTestId('json-content')).toContainText('"name"')
+    const editor = op.getByTestId('json-text-editor')
+    await expect(editor).toBeVisible()
+    await expect(editor.getByTestId('json-toggle-all-folds')).toBeVisible()
+    await expect(editor.locator('[data-testid="json-line"]')).not.toHaveCount(0)
+    await expect(editor.getByTestId('json-content')).toContainText('"name"')
   })
 
-  test('collapses nested json in the example viewer', async ({ page }) => {
+  test('collapses nested json in the request body editor', async ({ page }) => {
     await expandOperation(page, 'post:/items')
     await operationLocator(page, 'post:/items').getByTestId('request-body-tab-example').click()
 
-    const viewer = operationLocator(page, 'post:/items')
-      .locator('section')
-      .filter({ hasText: 'Request body' })
-      .getByTestId('json-viewer')
+    const editor = requestBodyJsonEditor(page, 'post:/items')
 
-    await expect(jsonEditorInnerText(viewer)).resolves.toContain('"count"')
-    await clickJsonFoldOnLineContaining(viewer, '"meta"')
-    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('"count"')).toBe(false)
+    await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
+    await clickJsonFoldOnLineContaining(editor, '"meta"')
+    await expect.poll(async () => (await jsonEditorInnerText(editor)).includes('"count"')).toBe(false)
   })
 
-  test('does not render doubled fold brackets in the example viewer', async ({ page }) => {
+  test('does not render doubled fold brackets in the request body editor example tab', async ({ page }) => {
     await expandOperation(page, 'post:/items')
     await operationLocator(page, 'post:/items').getByTestId('request-body-tab-example').click()
 
-    const viewer = requestBodyExampleViewer(page, 'post:/items')
-    await viewer.getByTestId('json-toggle-all-folds').click()
+    const editor = requestBodyJsonEditor(page, 'post:/items')
+    await editor.getByTestId('json-toggle-all-folds').click()
 
-    await expectReadOnlyFoldBrackets(viewer, '"tags"')
-    await expectReadOnlyFoldBrackets(viewer, '"meta"')
+    await expectEditableFoldLayers(editor, '"tags"')
+    await expectEditableFoldLayers(editor, '"meta"')
   })
 
-  test('collapses and expands from the opening bracket in read-only viewer', async ({ page }) => {
+  test('collapses and expands from the opening bracket in the request body editor', async ({ page }) => {
     await expandOperation(page, 'post:/items')
     await operationLocator(page, 'post:/items').getByTestId('request-body-tab-example').click()
 
-    const viewer = operationLocator(page, 'post:/items')
-      .locator('section')
-      .filter({ hasText: 'Request body' })
-      .getByTestId('json-viewer')
+    const editor = requestBodyJsonEditor(page, 'post:/items')
 
-    await clickJsonFoldOnLineContaining(viewer, '"tags"')
-    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('"a"')).toBe(false)
+    await clickJsonFoldOnLineContaining(editor, '"tags"')
+    await expect.poll(async () => (await jsonEditorInnerText(editor)).includes('"a"')).toBe(false)
 
-    await clickJsonFoldOnLineContaining(viewer, '"tags"')
-    await expect(jsonEditorInnerText(viewer)).resolves.toContain('"a"')
+    await clickJsonFoldOnLineContaining(editor, '"tags"')
+    await expect(jsonEditorInnerText(editor)).resolves.toContain('"a"')
   })
 })

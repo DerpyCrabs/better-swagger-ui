@@ -1,12 +1,11 @@
 import { expect, test } from '@playwright/test'
 import {
   clickJsonFoldOnLineContaining,
-  executeTryItOut,
+  executeOperation,
   expandOperation,
   jsonEditorInnerText,
   loadSpec,
   mockApi,
-  openTryItOut,
   operationLocator,
   responseJsonViewer,
   specUrl,
@@ -32,8 +31,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const op = operationLocator(page, 'get:/json')
     await expect(op.getByTestId('response-status')).toContainText('200')
@@ -53,8 +51,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const op = operationLocator(page, 'get:/json')
     const responseBody = op.getByTestId('response-body')
@@ -83,8 +80,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/csv')
-    await openTryItOut(page, 'get:/csv')
-    await executeTryItOut(page, 'get:/csv')
+    await executeOperation(page, 'get:/csv')
 
     const op = operationLocator(page, 'get:/csv')
     await expect(op.getByTestId('download-response')).toBeVisible()
@@ -104,11 +100,10 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/file')
-    await openTryItOut(page, 'get:/file')
-    await executeTryItOut(page, 'get:/file')
+    await executeOperation(page, 'get:/file')
 
     const op = operationLocator(page, 'get:/file')
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     await expect(op.getByTestId('download-response')).toBeVisible()
     await expect(op.getByText('data.bin')).toBeVisible()
   })
@@ -123,11 +118,10 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/image')
-    await openTryItOut(page, 'get:/image')
-    await executeTryItOut(page, 'get:/image')
+    await executeOperation(page, 'get:/image')
 
     const op = operationLocator(page, 'get:/image')
-    await expect(op.getByTestId('response-status')).toContainText('200', { timeout: 10_000 })
+    await expect(op.getByTestId('response-status')).toContainText('200')
     await expect(op.locator('img[alt]')).toBeVisible()
   })
 
@@ -141,8 +135,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/error')
-    await openTryItOut(page, 'get:/error')
-    await executeTryItOut(page, 'get:/error')
+    await executeOperation(page, 'get:/error')
 
     const op = operationLocator(page, 'get:/error')
     await expect(op.getByTestId('response-status')).toContainText('400')
@@ -162,8 +155,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/error')
-    await openTryItOut(page, 'get:/error')
-    await executeTryItOut(page, 'get:/error')
+    await executeOperation(page, 'get:/error')
 
     const viewer = responseJsonViewer(page, 'get:/error')
     await expect(viewer).toBeVisible()
@@ -184,8 +176,7 @@ test.describe('response handling', () => {
     })
 
     await expandOperation(page, 'get:/json')
-    await openTryItOut(page, 'get:/json')
-    await executeTryItOut(page, 'get:/json')
+    await executeOperation(page, 'get:/json')
 
     const op = operationLocator(page, 'get:/json')
     await expect(op.getByTestId('response-body').getByTestId('json-viewer')).toBeVisible()

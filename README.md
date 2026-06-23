@@ -38,7 +38,7 @@ This routes cross-origin requests through `/__proxy` on the local Vite dev serve
    - `?url=` / `?configUrl=` query params
    - URLs embedded in the Swagger UI page or `swagger-initializer.js`
    - Common paths (`/v3/api-docs`, `/swagger.json`, `/openapi.yaml`, …)
-4. Browse operations in the sidebar and use **Try it out** to execute requests
+4. Browse operations and use **Execute** to send requests
 
 ## Testing
 

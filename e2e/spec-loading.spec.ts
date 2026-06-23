@@ -37,7 +37,7 @@ test.describe('spec loading', () => {
   test('switches definition and updates title', async ({ page }) => {
     await loadSpec(page, `${FIXTURE_PATH}/swagger-ui/config-url/index.html`)
     await page.getByTestId('definition-select').selectOption('API B')
-    await expect(page.getByTestId('api-title')).toHaveText('Definition B', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Definition B')
   })
 
   test('loads direct OpenAPI YAML URL', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('spec loading', () => {
   test('loads uploaded YAML file', async ({ page }) => {
     await page.goto('/')
     await page.getByTestId('spec-file-input').setInputFiles('tests/fixtures/openapi/minimal.yaml')
-    await expect(page.getByTestId('api-title')).toHaveText('Minimal API', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API')
   })
 
   test('loads pasted YAML content', async ({ page }) => {
@@ -74,7 +74,7 @@ paths:
       input.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true }))
     }, yaml)
 
-    await expect(page.getByTestId('api-title')).toHaveText('Minimal API', { timeout: 15_000 })
+    await expect(page.getByTestId('api-title')).toHaveText('Minimal API')
   })
 
   test('shows error when spec cannot be loaded', async ({ page }) => {
@@ -83,8 +83,6 @@ paths:
     await page.getByTestId('load-form').evaluate((form) => {
       ;(form as HTMLFormElement).requestSubmit()
     })
-    await expect(page.getByText(/Could not fetch|Could not find OpenAPI|Failed to load spec/i)).toBeVisible({
-      timeout: 15_000,
-    })
+    await expect(page.getByText(/Could not fetch|Could not find OpenAPI|Failed to load spec/i)).toBeVisible()
   })
 })

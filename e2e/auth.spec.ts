@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
   clearAuthStorage,
-  executeTryItOut,
+  executeOperation,
   expandOperation,
   loadSpec,
   mockApi,
-  openTryItOut,
   operationLocator,
   specUrl,
 } from './helpers'
@@ -34,12 +33,10 @@ test.describe('authorization', () => {
     await page.getByTestId('ApiKeyAuth-authorize').click()
 
     await expandOperation(page, 'get:/secure')
-    await openTryItOut(page, 'get:/secure')
-    await executeTryItOut(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
 
     await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
       '200',
-      { timeout: 10_000 },
     )
     expect(headers['x-api-key']).toBe('secret-key')
   })
@@ -61,12 +58,10 @@ test.describe('authorization', () => {
     await page.getByTestId('BearerAuth-authorize').click()
 
     await expandOperation(page, 'get:/secure')
-    await openTryItOut(page, 'get:/secure')
-    await executeTryItOut(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
 
     await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
       '200',
-      { timeout: 10_000 },
     )
     expect(headers.authorization).toBe('Bearer my-bearer-token')
   })
@@ -95,17 +90,13 @@ test.describe('authorization', () => {
     await page.locator('input[name="password"]').fill('pass')
     await page.locator('input[name="client_id"]').fill('test-client')
     await page.getByTestId('OAuthPassword-authorize').click()
-    await expect(page.getByTestId('authorize-button')).toContainText('Authorized', {
-      timeout: 10_000,
-    })
+    await expect(page.getByTestId('authorize-button')).toContainText('Authorized')
 
     await expandOperation(page, 'get:/secure')
-    await openTryItOut(page, 'get:/secure')
-    await executeTryItOut(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
 
     await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
       '200',
-      { timeout: 15_000 },
     )
     expect(headers.authorization).toBe('Bearer oauth-access')
   })
@@ -128,12 +119,10 @@ test.describe('authorization', () => {
     await page.getByTestId('BasicAuth-authorize').click()
 
     await expandOperation(page, 'get:/secure')
-    await openTryItOut(page, 'get:/secure')
-    await executeTryItOut(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
 
     await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
       '200',
-      { timeout: 10_000 },
     )
     expect(headers.authorization).toBe(`Basic ${Buffer.from('alice:secret').toString('base64')}`)
   })
@@ -160,24 +149,50 @@ test.describe('authorization', () => {
     await page.getByTestId('CookieApiKey-authorize').click()
 
     await expandOperation(page, 'get:/public')
-    await openTryItOut(page, 'get:/public')
-    await executeTryItOut(page, 'get:/public')
+    await executeOperation(page, 'get:/public')
 
     await expect(operationLocator(page, 'get:/public').getByTestId('response-status')).toContainText(
       '200',
-      { timeout: 10_000 },
     )
     expect(requestUrl).toContain('api_key=query-secret')
     expect(headers.cookie).toContain('session=cookie-secret')
+  })
+
+  test('shows authorize button next to execute on 401', async ({ page }) => {
+    let callCount = 0
+
+    await mockApi(page, async (route) => {
+      callCount += 1
+      const status = callCount === 1 ? 401 : 200
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(status === 401 ? { error: 'Unauthorized' } : { ok: true }),
+      })
+    })
+
+    await expandOperation(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
+
+    const op = operationLocator(page, 'get:/secure')
+    await expect(op.getByTestId('response-status')).toContainText('401')
+    await expect(op.getByTestId('execute-authorize')).toBeVisible()
+
+    await op.getByTestId('execute-authorize').click()
+    await expect(page.getByTestId('authorize-dialog')).toBeVisible()
+    await page.getByPlaceholder('Bearer token').fill('my-token')
+    await page.getByTestId('BearerAuth-authorize').click()
+
+    await expect(op.getByTestId('response-status')).toContainText('200')
+    await expect(op.getByTestId('execute-authorize')).not.toBeVisible()
+    expect(callCount).toBe(2)
   })
 
   test('logout clears authorization', async ({ page }) => {
     await page.getByTestId('authorize-button').click()
     await page.getByPlaceholder('Bearer token').fill('token')
     await page.getByTestId('BearerAuth-authorize').click()
-    await expect(page.getByTestId('authorize-button')).toContainText('Authorized', {
-      timeout: 5_000,
-    })
+    await expect(page.getByTestId('authorize-button')).toContainText('Authorized')
 
     await page.getByTestId('authorize-button').click()
     await expect(page.getByTestId('authorize-dialog')).toBeVisible()
