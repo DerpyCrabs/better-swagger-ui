@@ -1,4 +1,4 @@
-import { Show } from 'solid-js'
+import { createEffect, createSignal, Show } from 'solid-js'
 import { LoaderCircle, Upload } from '../icons'
 import { looksLikeSpecText } from '../lib/parse-spec'
 import type { SpecDefinition } from '../lib/spec-definitions'
@@ -11,8 +11,7 @@ interface AppHeaderProps {
   loading?: boolean
   specLoaded: boolean
   definitions: SpecDefinition[]
-  selectedDefinition: string | null
-  onUrlChange: (url: string) => void
+  definition: string
   onLoad: (url: string) => void
   onLoadContent?: (sourceLabel: string, text: string) => void
   onDefinitionChange?: (name: string) => void
@@ -29,10 +28,15 @@ function isValidHttpUrl(value: string): boolean {
 
 export function AppHeader(props: AppHeaderProps) {
   let fileInput: HTMLInputElement | undefined
+  const [draft, setDraft] = createSignal(props.url)
+
+  createEffect(() => {
+    setDraft(props.url)
+  })
 
   const submit = (event: Event) => {
     event.preventDefault()
-    const trimmed = props.url.trim()
+    const trimmed = draft().trim()
     if (isValidHttpUrl(trimmed)) {
       props.onLoad(trimmed)
     }
@@ -44,7 +48,7 @@ export function AppHeader(props: AppHeaderProps) {
 
     if (isValidHttpUrl(pasted)) {
       event.preventDefault()
-      props.onUrlChange(pasted)
+      setDraft(pasted)
       props.onLoad(pasted)
       return
     }
@@ -52,7 +56,7 @@ export function AppHeader(props: AppHeaderProps) {
     if (props.onLoadContent && looksLikeSpecText(pasted)) {
       event.preventDefault()
       const label = pasted.startsWith('{') ? 'pasted-spec.json' : 'pasted-spec.yaml'
-      props.onUrlChange(label)
+      setDraft(label)
       props.onLoadContent(label, pasted)
     }
   }
@@ -63,7 +67,7 @@ export function AppHeader(props: AppHeaderProps) {
 
     void file.text().then((text) => {
       props.onLoadContent?.(file.name, text)
-      props.onUrlChange(file.name)
+      setDraft(file.name)
     })
 
     ;(event.currentTarget as HTMLInputElement).value = ''
@@ -81,8 +85,8 @@ export function AppHeader(props: AppHeaderProps) {
             <input
               type="text"
               data-testid="url-input"
-              value={props.url}
-              onInput={(event) => props.onUrlChange(event.currentTarget.value)}
+              value={draft()}
+              onInput={(event) => setDraft(event.currentTarget.value)}
               onPaste={handlePaste}
               placeholder="Swagger UI URL or paste YAML/JSON"
               class="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:placeholder:text-dm-muted dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
@@ -125,15 +129,15 @@ export function AppHeader(props: AppHeaderProps) {
               </>
             </Show>
           </div>
-
-          <Show when={props.definitions.length > 1}>
-            <DefinitionSelector
-              definitions={props.definitions}
-              selected={props.selectedDefinition ?? props.definitions[0]?.name ?? ''}
-              onChange={(name) => props.onDefinitionChange?.(name)}
-            />
-          </Show>
         </form>
+
+        <Show when={props.definitions.length > 1}>
+          <DefinitionSelector
+            definitions={props.definitions}
+            selected={props.definition}
+            onChange={(name) => props.onDefinitionChange?.(name)}
+          />
+        </Show>
 
         <div class="flex shrink-0 items-center gap-1.5">
           <Show when={props.specLoaded}>

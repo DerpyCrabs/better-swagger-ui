@@ -13,7 +13,7 @@ export function readRoute(): AppRoute {
   }
 }
 
-export function writeRoute(route: AppRoute) {
+export function writeRoute(route: AppRoute): boolean {
   const params = new URLSearchParams()
 
   if (route.url) {
@@ -30,10 +30,14 @@ export function writeRoute(route: AppRoute) {
 
   const query = params.toString()
   const next = query ? `${window.location.pathname}?${query}` : window.location.pathname
+  const current = `${window.location.pathname}${window.location.search}`
 
-  if (next !== `${window.location.pathname}${window.location.search}`) {
+  if (next !== current) {
     history.replaceState(null, '', next)
+    return true
   }
+
+  return false
 }
 
 export function subscribeRoute(onChange: (route: AppRoute) => void) {

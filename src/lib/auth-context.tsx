@@ -70,11 +70,7 @@ export function AuthProvider(
 
   createEffect(() => {
     const loaded = props.loaded()
-    if (!loaded) {
-      setSchemes([])
-      setEntries(new Map())
-      return
-    }
+    if (!loaded) return
 
     setSchemes(parseSecuritySchemes(loaded.spec, loaded.oauthInit))
     setEntries(loadStoredEntries(loaded.sourceUrl))

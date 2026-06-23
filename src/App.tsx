@@ -1,22 +1,12 @@
-import { createEffect, createSignal, onMount, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, onMount, Show } from 'solid-js'
 import { AlertCircle, LoaderCircle } from './icons'
 import { ApiDocument } from './components/ApiDocument'
 import { AppHeader } from './components/AppHeader'
 import { AuthProvider } from './lib/auth-context'
-import { loadSpecDocument, loadSpecFromSwaggerUi, loadSpecFromText } from './lib/load-spec'
-import type { LoadedSpec } from './lib/load-spec'
 import { readRoute, subscribeRoute, writeRoute } from './lib/router'
 import type { SpecDefinition } from './lib/spec-definitions'
-
-function normalizeSourceUrl(url: string): string {
-  try {
-    const parsed = new URL(url.trim())
-    parsed.hash = ''
-    return parsed.href
-  } catch {
-    return url.trim()
-  }
-}
+import { normalizeSourceUrl, type SpecQuerySource } from './lib/spec-query'
+import { useSpecQuery } from './lib/use-spec-query'
 
 function domainFromUrl(url: string): string | null {
   try {
@@ -26,201 +16,148 @@ function domainFromUrl(url: string): string | null {
   }
 }
 
+function definitionForRoute(name: string | null, defs: SpecDefinition[]) {
+  return defs.length > 1 && name ? name : null
+}
+
 function App() {
   const initialRoute = readRoute()
+  const [routeRevision, bumpRoute] = createSignal(0)
+  const route = createMemo(() => {
+    routeRevision()
+    return readRoute()
+  })
 
-  const [inputUrl, setInputUrl] = createSignal(initialRoute.url ?? '')
-  const [definition, setDefinition] = createSignal<string | null>(initialRoute.definition)
-  const [loading, setLoading] = createSignal(false)
-  const [error, setError] = createSignal<string | null>(null)
-  const [loaded, setLoaded] = createSignal<LoadedSpec | null>(null)
-  const [definitions, setDefinitions] = createSignal<SpecDefinition[]>([])
+  const [sourceUrl, setSourceUrl] = createSignal<string | null>(
+    initialRoute.url ? normalizeSourceUrl(initialRoute.url) : null,
+  )
+  const [textSource, setTextSource] = createSignal<{ label: string; text: string } | null>(null)
   const [expandedOp, setExpandedOp] = createSignal<string | null>(initialRoute.op)
   const [scrollToOp, setScrollToOp] = createSignal<string | null>(initialRoute.op)
   const [tryItOutOp, setTryItOutOp] = createSignal<string | null>(initialRoute.op)
 
-  let loadSeq = 0
+  const definition = () => route().definition
+  const headerUrl = () => sourceUrl() ?? textSource()?.label ?? ''
+  const routeUrl = () => sourceUrl() ?? ''
+
+  const specSource = createMemo<SpecQuerySource | null>(() => {
+    const text = textSource()
+    if (text) return { kind: 'text', label: text.label, text: text.text }
+
+    const url = sourceUrl()
+    if (url) return { kind: 'url', sourceUrl: url, definition: definition() }
+
+    return null
+  })
+
+  const specQuery = useSpecQuery(specSource)
+
+  const definitions = () => specQuery.data?.definitions ?? []
+
+  const selectedDefinition = () =>
+    definition() ?? specQuery.data?.selectedDefinition ?? definitions()[0]?.name ?? ''
+
+  const loaded = createMemo(() => {
+    if (!specSource()) return null
+    return specQuery.data ?? null
+  })
 
   createEffect(() => {
-    const domain = domainFromUrl(inputUrl())
-    document.title = domain ?? 'Better Swagger UI'
+    document.title = domainFromUrl(headerUrl()) ?? 'Better Swagger UI'
   })
 
   const syncRoute = (url: string, op: string | null, nextDefinition: string | null) => {
-    writeRoute({ url, op, definition: nextDefinition })
+    if (writeRoute({ url, op, definition: nextDefinition })) {
+      bumpRoute((value) => value + 1)
+    }
   }
 
-  const definitionForRoute = (name: string | null, defs: SpecDefinition[]) =>
-    defs.length > 1 && name ? name : null
+  createEffect(() => {
+    const data = specQuery.data
+    if (!data || textSource() || definition() || specQuery.isFetching) return
+    const url = sourceUrl()
+    if (!url) return
+    syncRoute(url, expandedOp(), definitionForRoute(data.selectedDefinition, data.definitions))
+  })
 
-  const switchDefinition = async (name: string) => {
-    const current = loaded()
-    const defs = definitions().length ? definitions() : current?.definitions ?? []
-    const target = defs.find((item) => item.name === name)
-    if (!current || !target) return
-    if (definition() === name && current.specUrl === target.url) return
-
-    const seq = ++loadSeq
-    setDefinition(name)
-    setLoading(true)
-    setError(null)
+  const handleLoad = (url: string) => {
+    const trimmed = normalizeSourceUrl(url)
+    const sameSource = trimmed === sourceUrl()
+    setTextSource(null)
+    setSourceUrl(trimmed)
     setExpandedOp(null)
     setScrollToOp(null)
     setTryItOutOp(null)
-
-    try {
-      const spec = await loadSpecDocument(target.url)
-      if (seq !== loadSeq) return
-
-      setLoaded({
-        ...current,
-        spec,
-        specUrl: target.url,
-        selectedDefinition: name,
-        definitions: defs,
-      })
-      syncRoute(inputUrl(), null, definitionForRoute(name, defs))
-    } catch (err) {
-      if (seq !== loadSeq) return
-      setError(err instanceof Error ? err.message : 'Failed to load definition')
-    } finally {
-      if (seq === loadSeq) {
-        setLoading(false)
-      }
-    }
-  }
-
-  const handleLoad = async (
-    url: string,
-    op: string | null = null,
-    nextDefinition: string | null | undefined = undefined,
-  ) => {
-    const trimmed = normalizeSourceUrl(url)
-    const sameSource = normalizeSourceUrl(loaded()?.sourceUrl ?? '') === trimmed
-    const activeDefinition =
-      nextDefinition !== undefined
-        ? nextDefinition
-        : sameSource
-          ? definition() ?? loaded()?.selectedDefinition ?? null
-          : null
-
-    if (sameSource && activeDefinition && loaded() && definitions().length > 1) {
-      await switchDefinition(activeDefinition)
-      return
-    }
-
-    const seq = ++loadSeq
-
-    setLoading(true)
-    setError(null)
-    if (!sameSource) {
-      setLoaded(null)
-      setDefinitions([])
-      if (activeDefinition) {
-        setDefinition(activeDefinition)
-      } else {
-        setDefinition(null)
-      }
-    } else if (activeDefinition) {
-      setDefinition(activeDefinition)
-    }
-
-    setExpandedOp(op)
-    setScrollToOp(op)
-    setTryItOutOp(op)
-    setInputUrl(trimmed)
-
-    try {
-      const result = await loadSpecFromSwaggerUi(trimmed, activeDefinition)
-      if (seq !== loadSeq) return
-
-      setLoaded(result)
-      setDefinitions(result.definitions)
-      setDefinition(result.selectedDefinition)
-      syncRoute(trimmed, op, definitionForRoute(result.selectedDefinition, result.definitions))
-    } catch (err) {
-      if (seq !== loadSeq) return
-      setError(err instanceof Error ? err.message : 'Failed to load spec')
-      syncRoute(
-        trimmed,
-        op,
-        activeDefinition && definitions().length > 1 ? activeDefinition : null,
-      )
-    } finally {
-      if (seq === loadSeq) {
-        setLoading(false)
-      }
-    }
+    syncRoute(
+      trimmed,
+      null,
+      sameSource ? definitionForRoute(definition(), definitions()) : null,
+    )
   }
 
   const handleLoadContent = (sourceLabel: string, text: string) => {
-    const seq = ++loadSeq
-
-    setLoading(true)
-    setError(null)
-    setLoaded(null)
-    setDefinitions([])
-    setDefinition(null)
+    setSourceUrl(null)
+    setTextSource({ label: sourceLabel, text })
     setExpandedOp(null)
     setScrollToOp(null)
     setTryItOutOp(null)
-    setInputUrl(sourceLabel)
-
-    try {
-      const result = loadSpecFromText(sourceLabel, text)
-      if (seq !== loadSeq) return
-
-      setLoaded(result)
-      setDefinitions(result.definitions)
-      setDefinition(result.selectedDefinition)
-      syncRoute('', null, null)
-    } catch (err) {
-      if (seq !== loadSeq) return
-      setError(err instanceof Error ? err.message : 'Failed to load spec')
-      syncRoute('', null, null)
-    } finally {
-      if (seq === loadSeq) {
-        setLoading(false)
-      }
-    }
+    syncRoute('', null, null)
   }
 
   const handleDefinitionChange = (name: string) => {
-    void switchDefinition(name)
+    setExpandedOp(null)
+    setScrollToOp(null)
+    setTryItOutOp(null)
+    syncRoute(routeUrl(), null, definitionForRoute(name, definitions()))
   }
 
   const handleExpandedOpChange = (op: string | null) => {
     setExpandedOp(op)
     setTryItOutOp(null)
-    syncRoute(inputUrl(), op, definitionForRoute(definition(), definitions()))
+    syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
   const handleExpandAndTryItOut = (op: string) => {
     setExpandedOp(op)
     setScrollToOp(op)
     setTryItOutOp(op)
-    syncRoute(inputUrl(), op, definitionForRoute(definition(), definitions()))
+    syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
+  createEffect(() => {
+    const data = specQuery.data
+    if (!data || textSource()) return
+    const url = sourceUrl()
+    if (!url) return
+    const nextOp = expandedOp()
+    const nextDefinition = definitionForRoute(definition(), data.definitions)
+    const current = readRoute()
+    const currentUrl = current.url ? normalizeSourceUrl(current.url) : ''
+    if (currentUrl === url && current.op === nextOp && current.definition === nextDefinition) return
+    syncRoute(url, nextOp, nextDefinition)
+  })
+
   onMount(() => {
-    const route = readRoute()
-    if (route.url) {
-      void handleLoad(route.url, route.op, route.definition)
-    }
-
     return subscribeRoute((next) => {
-      const definitionChanged = next.definition !== definition()
-      const urlChanged = normalizeSourceUrl(next.url ?? '') !== normalizeSourceUrl(inputUrl())
+      bumpRoute((value) => value + 1)
+      const nextUrl = next.url ? normalizeSourceUrl(next.url) : null
 
-      if (urlChanged) {
+      if (nextUrl !== sourceUrl()) {
         if (next.url) {
-          void handleLoad(next.url, next.op, next.definition)
+          const trimmed = normalizeSourceUrl(next.url)
+          setTextSource(null)
+          setSourceUrl(trimmed)
+          setExpandedOp(next.op)
+          setScrollToOp(next.op)
+          setTryItOutOp(next.op)
         }
         return
       }
 
-      if (definitionChanged && next.definition) {
-        void switchDefinition(next.definition)
+      if (next.definition !== definition()) {
+        setExpandedOp(null)
+        setScrollToOp(null)
+        setTryItOutOp(null)
         return
       }
 
@@ -230,33 +167,38 @@ function App() {
     })
   })
 
+  const specError = () => {
+    const err = specQuery.error
+    if (!err) return null
+    return err instanceof Error ? err.message : 'Failed to load spec'
+  }
+
   return (
     <AuthProvider loaded={loaded}>
       <div class="min-h-screen">
         <AppHeader
-          url={inputUrl()}
-          loading={loading()}
-          specLoaded={!!loaded()}
+          url={headerUrl()}
+          loading={specQuery.isFetching}
+          specLoaded={!!specQuery.data}
           definitions={definitions()}
-          selectedDefinition={definition()}
-          onUrlChange={setInputUrl}
-          onLoad={(url) => void handleLoad(url, null, null)}
+          definition={selectedDefinition()}
+          onLoad={handleLoad}
           onLoadContent={handleLoadContent}
           onDefinitionChange={handleDefinitionChange}
         />
 
-        <Show when={error()}>
+        <Show when={specError()}>
           <div class="mx-auto flex max-w-5xl items-start gap-2 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
             <AlertCircle size={16} class="mt-0.5 shrink-0" />
-            <p>{error()}</p>
+            <p>{specError()}</p>
           </div>
         </Show>
 
-        <Show when={loaded()}>
-          {(spec) => (
+        <Show when={specQuery.data}>
+          {(data) => (
             <main class="mx-auto max-w-5xl px-4 py-4">
               <ApiDocument
-                loaded={spec()}
+                loaded={data()}
                 expandedOp={expandedOp()}
                 scrollToOp={scrollToOp()}
                 tryItOutOp={tryItOutOp()}
@@ -269,7 +211,7 @@ function App() {
           )}
         </Show>
 
-        <Show when={loading() && !loaded()}>
+        <Show when={specQuery.isLoading}>
           <div
             class="flex items-center justify-center gap-2 px-4 py-10 text-sm text-zinc-500 dark:text-dm-muted"
             data-testid="spec-loading-message"
@@ -279,7 +221,7 @@ function App() {
           </div>
         </Show>
 
-        <Show when={!loaded() && !loading() && !error()}>
+        <Show when={!specSource() && !specQuery.isFetching && !specQuery.error}>
           <p class="px-4 py-10 text-center text-sm text-zinc-500">
             Paste a Swagger UI URL, upload an OpenAPI file, or paste YAML/JSON spec content above.
           </p>

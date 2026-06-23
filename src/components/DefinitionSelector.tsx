@@ -1,4 +1,4 @@
-import { For, Show, createEffect } from 'solid-js'
+import { For, Show } from 'solid-js'
 import { ChevronDown } from '../icons'
 import type { SpecDefinition } from '../lib/spec-definitions'
 
@@ -9,19 +9,10 @@ interface DefinitionSelectorProps {
 }
 
 export function DefinitionSelector(props: DefinitionSelectorProps) {
-  let selectRef: HTMLSelectElement | undefined
-
-  createEffect(() => {
-    if (selectRef && selectRef.value !== props.selected) {
-      selectRef.value = props.selected
-    }
-  })
-
   return (
     <Show when={props.definitions.length > 1}>
       <div class="relative shrink-0">
         <select
-          ref={selectRef}
           data-testid="definition-select"
           aria-label="Select a definition"
           title="Select a definition"
@@ -29,7 +20,11 @@ export function DefinitionSelector(props: DefinitionSelectorProps) {
           class="min-w-[11.5rem] max-w-[14rem] appearance-none rounded-md border border-emerald-600 bg-white py-1.5 pr-8 pl-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <For each={props.definitions}>
-            {(definition) => <option value={definition.name}>{definition.name}</option>}
+            {(definition) => (
+              <option value={definition.name} selected={definition.name === props.selected}>
+                {definition.name}
+              </option>
+            )}
           </For>
         </select>
         <ChevronDown
