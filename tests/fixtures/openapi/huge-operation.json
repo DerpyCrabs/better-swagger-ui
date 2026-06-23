@@ -1,0 +1,1950 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Huge Operation API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/fixtures/mock-api"
+    }
+  ],
+  "paths": {
+    "/big-a": {
+      "post": {
+        "summary": "Huge A",
+        "tags": [
+          "big"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "field0": {
+                    "type": "object",
+                    "description": "Property 0"
+                  },
+                  "field1": {
+                    "type": "boolean",
+                    "description": "Property 1"
+                  },
+                  "field2": {
+                    "type": "boolean",
+                    "description": "Property 2"
+                  },
+                  "field3": {
+                    "type": "object",
+                    "description": "Property 3"
+                  },
+                  "field4": {
+                    "type": "boolean",
+                    "description": "Property 4"
+                  },
+                  "field5": {
+                    "type": "boolean",
+                    "description": "Property 5"
+                  },
+                  "field6": {
+                    "type": "object",
+                    "description": "Property 6"
+                  },
+                  "field7": {
+                    "type": "boolean",
+                    "description": "Property 7"
+                  },
+                  "field8": {
+                    "type": "boolean",
+                    "description": "Property 8"
+                  },
+                  "field9": {
+                    "type": "object",
+                    "description": "Property 9"
+                  },
+                  "field10": {
+                    "type": "boolean",
+                    "description": "Property 10"
+                  },
+                  "field11": {
+                    "type": "boolean",
+                    "description": "Property 11"
+                  },
+                  "field12": {
+                    "type": "object",
+                    "description": "Property 12"
+                  },
+                  "field13": {
+                    "type": "boolean",
+                    "description": "Property 13"
+                  },
+                  "field14": {
+                    "type": "boolean",
+                    "description": "Property 14"
+                  },
+                  "field15": {
+                    "type": "object",
+                    "description": "Property 15"
+                  },
+                  "field16": {
+                    "type": "boolean",
+                    "description": "Property 16"
+                  },
+                  "field17": {
+                    "type": "boolean",
+                    "description": "Property 17"
+                  },
+                  "field18": {
+                    "type": "object",
+                    "description": "Property 18"
+                  },
+                  "field19": {
+                    "type": "boolean",
+                    "description": "Property 19"
+                  },
+                  "field20": {
+                    "type": "boolean",
+                    "description": "Property 20"
+                  },
+                  "field21": {
+                    "type": "object",
+                    "description": "Property 21"
+                  },
+                  "field22": {
+                    "type": "boolean",
+                    "description": "Property 22"
+                  },
+                  "field23": {
+                    "type": "boolean",
+                    "description": "Property 23"
+                  },
+                  "field24": {
+                    "type": "object",
+                    "description": "Property 24"
+                  },
+                  "field25": {
+                    "type": "boolean",
+                    "description": "Property 25"
+                  },
+                  "field26": {
+                    "type": "boolean",
+                    "description": "Property 26"
+                  },
+                  "field27": {
+                    "type": "object",
+                    "description": "Property 27"
+                  },
+                  "field28": {
+                    "type": "boolean",
+                    "description": "Property 28"
+                  },
+                  "field29": {
+                    "type": "boolean",
+                    "description": "Property 29"
+                  },
+                  "field30": {
+                    "type": "object",
+                    "description": "Property 30"
+                  },
+                  "field31": {
+                    "type": "boolean",
+                    "description": "Property 31"
+                  },
+                  "field32": {
+                    "type": "boolean",
+                    "description": "Property 32"
+                  },
+                  "field33": {
+                    "type": "object",
+                    "description": "Property 33"
+                  },
+                  "field34": {
+                    "type": "boolean",
+                    "description": "Property 34"
+                  },
+                  "field35": {
+                    "type": "boolean",
+                    "description": "Property 35"
+                  },
+                  "field36": {
+                    "type": "object",
+                    "description": "Property 36"
+                  },
+                  "field37": {
+                    "type": "boolean",
+                    "description": "Property 37"
+                  },
+                  "field38": {
+                    "type": "boolean",
+                    "description": "Property 38"
+                  },
+                  "field39": {
+                    "type": "object",
+                    "description": "Property 39"
+                  },
+                  "field40": {
+                    "type": "boolean",
+                    "description": "Property 40"
+                  },
+                  "field41": {
+                    "type": "boolean",
+                    "description": "Property 41"
+                  },
+                  "field42": {
+                    "type": "object",
+                    "description": "Property 42"
+                  },
+                  "field43": {
+                    "type": "boolean",
+                    "description": "Property 43"
+                  },
+                  "field44": {
+                    "type": "boolean",
+                    "description": "Property 44"
+                  },
+                  "field45": {
+                    "type": "object",
+                    "description": "Property 45"
+                  },
+                  "field46": {
+                    "type": "boolean",
+                    "description": "Property 46"
+                  },
+                  "field47": {
+                    "type": "boolean",
+                    "description": "Property 47"
+                  },
+                  "field48": {
+                    "type": "object",
+                    "description": "Property 48"
+                  },
+                  "field49": {
+                    "type": "boolean",
+                    "description": "Property 49"
+                  },
+                  "field50": {
+                    "type": "boolean",
+                    "description": "Property 50"
+                  },
+                  "field51": {
+                    "type": "object",
+                    "description": "Property 51"
+                  },
+                  "field52": {
+                    "type": "boolean",
+                    "description": "Property 52"
+                  },
+                  "field53": {
+                    "type": "boolean",
+                    "description": "Property 53"
+                  },
+                  "field54": {
+                    "type": "object",
+                    "description": "Property 54"
+                  },
+                  "field55": {
+                    "type": "boolean",
+                    "description": "Property 55"
+                  },
+                  "field56": {
+                    "type": "boolean",
+                    "description": "Property 56"
+                  },
+                  "field57": {
+                    "type": "object",
+                    "description": "Property 57"
+                  },
+                  "field58": {
+                    "type": "boolean",
+                    "description": "Property 58"
+                  },
+                  "field59": {
+                    "type": "boolean",
+                    "description": "Property 59"
+                  },
+                  "field60": {
+                    "type": "object",
+                    "description": "Property 60"
+                  },
+                  "field61": {
+                    "type": "boolean",
+                    "description": "Property 61"
+                  },
+                  "field62": {
+                    "type": "boolean",
+                    "description": "Property 62"
+                  },
+                  "field63": {
+                    "type": "object",
+                    "description": "Property 63"
+                  },
+                  "field64": {
+                    "type": "boolean",
+                    "description": "Property 64"
+                  },
+                  "field65": {
+                    "type": "boolean",
+                    "description": "Property 65"
+                  },
+                  "field66": {
+                    "type": "object",
+                    "description": "Property 66"
+                  },
+                  "field67": {
+                    "type": "boolean",
+                    "description": "Property 67"
+                  },
+                  "field68": {
+                    "type": "boolean",
+                    "description": "Property 68"
+                  },
+                  "field69": {
+                    "type": "object",
+                    "description": "Property 69"
+                  },
+                  "field70": {
+                    "type": "boolean",
+                    "description": "Property 70"
+                  },
+                  "field71": {
+                    "type": "boolean",
+                    "description": "Property 71"
+                  },
+                  "field72": {
+                    "type": "object",
+                    "description": "Property 72"
+                  },
+                  "field73": {
+                    "type": "boolean",
+                    "description": "Property 73"
+                  },
+                  "field74": {
+                    "type": "boolean",
+                    "description": "Property 74"
+                  },
+                  "field75": {
+                    "type": "object",
+                    "description": "Property 75"
+                  },
+                  "field76": {
+                    "type": "boolean",
+                    "description": "Property 76"
+                  },
+                  "field77": {
+                    "type": "boolean",
+                    "description": "Property 77"
+                  },
+                  "field78": {
+                    "type": "object",
+                    "description": "Property 78"
+                  },
+                  "field79": {
+                    "type": "boolean",
+                    "description": "Property 79"
+                  },
+                  "field80": {
+                    "type": "boolean",
+                    "description": "Property 80"
+                  },
+                  "field81": {
+                    "type": "object",
+                    "description": "Property 81"
+                  },
+                  "field82": {
+                    "type": "boolean",
+                    "description": "Property 82"
+                  },
+                  "field83": {
+                    "type": "boolean",
+                    "description": "Property 83"
+                  },
+                  "field84": {
+                    "type": "object",
+                    "description": "Property 84"
+                  },
+                  "field85": {
+                    "type": "boolean",
+                    "description": "Property 85"
+                  },
+                  "field86": {
+                    "type": "boolean",
+                    "description": "Property 86"
+                  },
+                  "field87": {
+                    "type": "object",
+                    "description": "Property 87"
+                  },
+                  "field88": {
+                    "type": "boolean",
+                    "description": "Property 88"
+                  },
+                  "field89": {
+                    "type": "boolean",
+                    "description": "Property 89"
+                  },
+                  "field90": {
+                    "type": "object",
+                    "description": "Property 90"
+                  },
+                  "field91": {
+                    "type": "boolean",
+                    "description": "Property 91"
+                  },
+                  "field92": {
+                    "type": "boolean",
+                    "description": "Property 92"
+                  },
+                  "field93": {
+                    "type": "object",
+                    "description": "Property 93"
+                  },
+                  "field94": {
+                    "type": "boolean",
+                    "description": "Property 94"
+                  },
+                  "field95": {
+                    "type": "boolean",
+                    "description": "Property 95"
+                  },
+                  "field96": {
+                    "type": "object",
+                    "description": "Property 96"
+                  },
+                  "field97": {
+                    "type": "boolean",
+                    "description": "Property 97"
+                  },
+                  "field98": {
+                    "type": "boolean",
+                    "description": "Property 98"
+                  },
+                  "field99": {
+                    "type": "object",
+                    "description": "Property 99"
+                  },
+                  "field100": {
+                    "type": "boolean",
+                    "description": "Property 100"
+                  },
+                  "field101": {
+                    "type": "boolean",
+                    "description": "Property 101"
+                  },
+                  "field102": {
+                    "type": "object",
+                    "description": "Property 102"
+                  },
+                  "field103": {
+                    "type": "boolean",
+                    "description": "Property 103"
+                  },
+                  "field104": {
+                    "type": "boolean",
+                    "description": "Property 104"
+                  },
+                  "field105": {
+                    "type": "object",
+                    "description": "Property 105"
+                  },
+                  "field106": {
+                    "type": "boolean",
+                    "description": "Property 106"
+                  },
+                  "field107": {
+                    "type": "boolean",
+                    "description": "Property 107"
+                  },
+                  "field108": {
+                    "type": "object",
+                    "description": "Property 108"
+                  },
+                  "field109": {
+                    "type": "boolean",
+                    "description": "Property 109"
+                  },
+                  "field110": {
+                    "type": "boolean",
+                    "description": "Property 110"
+                  },
+                  "field111": {
+                    "type": "object",
+                    "description": "Property 111"
+                  },
+                  "field112": {
+                    "type": "boolean",
+                    "description": "Property 112"
+                  },
+                  "field113": {
+                    "type": "boolean",
+                    "description": "Property 113"
+                  },
+                  "field114": {
+                    "type": "object",
+                    "description": "Property 114"
+                  },
+                  "field115": {
+                    "type": "boolean",
+                    "description": "Property 115"
+                  },
+                  "field116": {
+                    "type": "boolean",
+                    "description": "Property 116"
+                  },
+                  "field117": {
+                    "type": "object",
+                    "description": "Property 117"
+                  },
+                  "field118": {
+                    "type": "boolean",
+                    "description": "Property 118"
+                  },
+                  "field119": {
+                    "type": "boolean",
+                    "description": "Property 119"
+                  }
+                }
+              },
+              "example": {
+                "field0": true,
+                "field1": false,
+                "field2": true,
+                "field3": false,
+                "field4": true,
+                "field5": false,
+                "field6": true,
+                "field7": false,
+                "field8": true,
+                "field9": false,
+                "field10": true,
+                "field11": false,
+                "field12": true,
+                "field13": false,
+                "field14": true,
+                "field15": false,
+                "field16": true,
+                "field17": false,
+                "field18": true,
+                "field19": false,
+                "field20": true,
+                "field21": false,
+                "field22": true,
+                "field23": false,
+                "field24": true,
+                "field25": false,
+                "field26": true,
+                "field27": false,
+                "field28": true,
+                "field29": false,
+                "field30": true,
+                "field31": false,
+                "field32": true,
+                "field33": false,
+                "field34": true,
+                "field35": false,
+                "field36": true,
+                "field37": false,
+                "field38": true,
+                "field39": false,
+                "field40": true,
+                "field41": false,
+                "field42": true,
+                "field43": false,
+                "field44": true,
+                "field45": false,
+                "field46": true,
+                "field47": false,
+                "field48": true,
+                "field49": false,
+                "field50": true,
+                "field51": false,
+                "field52": true,
+                "field53": false,
+                "field54": true,
+                "field55": false,
+                "field56": true,
+                "field57": false,
+                "field58": true,
+                "field59": false,
+                "field60": true,
+                "field61": false,
+                "field62": true,
+                "field63": false,
+                "field64": true,
+                "field65": false,
+                "field66": true,
+                "field67": false,
+                "field68": true,
+                "field69": false,
+                "field70": true,
+                "field71": false,
+                "field72": true,
+                "field73": false,
+                "field74": true,
+                "field75": false,
+                "field76": true,
+                "field77": false,
+                "field78": true,
+                "field79": false,
+                "field80": true,
+                "field81": false,
+                "field82": true,
+                "field83": false,
+                "field84": true,
+                "field85": false,
+                "field86": true,
+                "field87": false,
+                "field88": true,
+                "field89": false,
+                "field90": true,
+                "field91": false,
+                "field92": true,
+                "field93": false,
+                "field94": true,
+                "field95": false,
+                "field96": true,
+                "field97": false,
+                "field98": true,
+                "field99": false,
+                "field100": true,
+                "field101": false,
+                "field102": true,
+                "field103": false,
+                "field104": true,
+                "field105": false,
+                "field106": true,
+                "field107": false,
+                "field108": true,
+                "field109": false,
+                "field110": true,
+                "field111": false,
+                "field112": true,
+                "field113": false,
+                "field114": true,
+                "field115": false,
+                "field116": true,
+                "field117": false,
+                "field118": true,
+                "field119": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "respField0": {
+                      "type": "string",
+                      "description": "Response field 0"
+                    },
+                    "respField1": {
+                      "type": "string",
+                      "description": "Response field 1"
+                    },
+                    "respField2": {
+                      "type": "string",
+                      "description": "Response field 2"
+                    },
+                    "respField3": {
+                      "type": "string",
+                      "description": "Response field 3"
+                    },
+                    "respField4": {
+                      "type": "string",
+                      "description": "Response field 4"
+                    },
+                    "respField5": {
+                      "type": "string",
+                      "description": "Response field 5"
+                    },
+                    "respField6": {
+                      "type": "string",
+                      "description": "Response field 6"
+                    },
+                    "respField7": {
+                      "type": "string",
+                      "description": "Response field 7"
+                    },
+                    "respField8": {
+                      "type": "string",
+                      "description": "Response field 8"
+                    },
+                    "respField9": {
+                      "type": "string",
+                      "description": "Response field 9"
+                    },
+                    "respField10": {
+                      "type": "string",
+                      "description": "Response field 10"
+                    },
+                    "respField11": {
+                      "type": "string",
+                      "description": "Response field 11"
+                    },
+                    "respField12": {
+                      "type": "string",
+                      "description": "Response field 12"
+                    },
+                    "respField13": {
+                      "type": "string",
+                      "description": "Response field 13"
+                    },
+                    "respField14": {
+                      "type": "string",
+                      "description": "Response field 14"
+                    },
+                    "respField15": {
+                      "type": "string",
+                      "description": "Response field 15"
+                    },
+                    "respField16": {
+                      "type": "string",
+                      "description": "Response field 16"
+                    },
+                    "respField17": {
+                      "type": "string",
+                      "description": "Response field 17"
+                    },
+                    "respField18": {
+                      "type": "string",
+                      "description": "Response field 18"
+                    },
+                    "respField19": {
+                      "type": "string",
+                      "description": "Response field 19"
+                    },
+                    "respField20": {
+                      "type": "string",
+                      "description": "Response field 20"
+                    },
+                    "respField21": {
+                      "type": "string",
+                      "description": "Response field 21"
+                    },
+                    "respField22": {
+                      "type": "string",
+                      "description": "Response field 22"
+                    },
+                    "respField23": {
+                      "type": "string",
+                      "description": "Response field 23"
+                    },
+                    "respField24": {
+                      "type": "string",
+                      "description": "Response field 24"
+                    },
+                    "respField25": {
+                      "type": "string",
+                      "description": "Response field 25"
+                    },
+                    "respField26": {
+                      "type": "string",
+                      "description": "Response field 26"
+                    },
+                    "respField27": {
+                      "type": "string",
+                      "description": "Response field 27"
+                    },
+                    "respField28": {
+                      "type": "string",
+                      "description": "Response field 28"
+                    },
+                    "respField29": {
+                      "type": "string",
+                      "description": "Response field 29"
+                    },
+                    "respField30": {
+                      "type": "string",
+                      "description": "Response field 30"
+                    },
+                    "respField31": {
+                      "type": "string",
+                      "description": "Response field 31"
+                    },
+                    "respField32": {
+                      "type": "string",
+                      "description": "Response field 32"
+                    },
+                    "respField33": {
+                      "type": "string",
+                      "description": "Response field 33"
+                    },
+                    "respField34": {
+                      "type": "string",
+                      "description": "Response field 34"
+                    },
+                    "respField35": {
+                      "type": "string",
+                      "description": "Response field 35"
+                    },
+                    "respField36": {
+                      "type": "string",
+                      "description": "Response field 36"
+                    },
+                    "respField37": {
+                      "type": "string",
+                      "description": "Response field 37"
+                    },
+                    "respField38": {
+                      "type": "string",
+                      "description": "Response field 38"
+                    },
+                    "respField39": {
+                      "type": "string",
+                      "description": "Response field 39"
+                    },
+                    "respField40": {
+                      "type": "string",
+                      "description": "Response field 40"
+                    },
+                    "respField41": {
+                      "type": "string",
+                      "description": "Response field 41"
+                    },
+                    "respField42": {
+                      "type": "string",
+                      "description": "Response field 42"
+                    },
+                    "respField43": {
+                      "type": "string",
+                      "description": "Response field 43"
+                    },
+                    "respField44": {
+                      "type": "string",
+                      "description": "Response field 44"
+                    },
+                    "respField45": {
+                      "type": "string",
+                      "description": "Response field 45"
+                    },
+                    "respField46": {
+                      "type": "string",
+                      "description": "Response field 46"
+                    },
+                    "respField47": {
+                      "type": "string",
+                      "description": "Response field 47"
+                    },
+                    "respField48": {
+                      "type": "string",
+                      "description": "Response field 48"
+                    },
+                    "respField49": {
+                      "type": "string",
+                      "description": "Response field 49"
+                    },
+                    "respField50": {
+                      "type": "string",
+                      "description": "Response field 50"
+                    },
+                    "respField51": {
+                      "type": "string",
+                      "description": "Response field 51"
+                    },
+                    "respField52": {
+                      "type": "string",
+                      "description": "Response field 52"
+                    },
+                    "respField53": {
+                      "type": "string",
+                      "description": "Response field 53"
+                    },
+                    "respField54": {
+                      "type": "string",
+                      "description": "Response field 54"
+                    },
+                    "respField55": {
+                      "type": "string",
+                      "description": "Response field 55"
+                    },
+                    "respField56": {
+                      "type": "string",
+                      "description": "Response field 56"
+                    },
+                    "respField57": {
+                      "type": "string",
+                      "description": "Response field 57"
+                    },
+                    "respField58": {
+                      "type": "string",
+                      "description": "Response field 58"
+                    },
+                    "respField59": {
+                      "type": "string",
+                      "description": "Response field 59"
+                    },
+                    "respField60": {
+                      "type": "string",
+                      "description": "Response field 60"
+                    },
+                    "respField61": {
+                      "type": "string",
+                      "description": "Response field 61"
+                    },
+                    "respField62": {
+                      "type": "string",
+                      "description": "Response field 62"
+                    },
+                    "respField63": {
+                      "type": "string",
+                      "description": "Response field 63"
+                    },
+                    "respField64": {
+                      "type": "string",
+                      "description": "Response field 64"
+                    },
+                    "respField65": {
+                      "type": "string",
+                      "description": "Response field 65"
+                    },
+                    "respField66": {
+                      "type": "string",
+                      "description": "Response field 66"
+                    },
+                    "respField67": {
+                      "type": "string",
+                      "description": "Response field 67"
+                    },
+                    "respField68": {
+                      "type": "string",
+                      "description": "Response field 68"
+                    },
+                    "respField69": {
+                      "type": "string",
+                      "description": "Response field 69"
+                    },
+                    "respField70": {
+                      "type": "string",
+                      "description": "Response field 70"
+                    },
+                    "respField71": {
+                      "type": "string",
+                      "description": "Response field 71"
+                    },
+                    "respField72": {
+                      "type": "string",
+                      "description": "Response field 72"
+                    },
+                    "respField73": {
+                      "type": "string",
+                      "description": "Response field 73"
+                    },
+                    "respField74": {
+                      "type": "string",
+                      "description": "Response field 74"
+                    },
+                    "respField75": {
+                      "type": "string",
+                      "description": "Response field 75"
+                    },
+                    "respField76": {
+                      "type": "string",
+                      "description": "Response field 76"
+                    },
+                    "respField77": {
+                      "type": "string",
+                      "description": "Response field 77"
+                    },
+                    "respField78": {
+                      "type": "string",
+                      "description": "Response field 78"
+                    },
+                    "respField79": {
+                      "type": "string",
+                      "description": "Response field 79"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/big-b": {
+      "post": {
+        "summary": "Huge B",
+        "tags": [
+          "big"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "field0": {
+                    "type": "object",
+                    "description": "Property 0"
+                  },
+                  "field1": {
+                    "type": "boolean",
+                    "description": "Property 1"
+                  },
+                  "field2": {
+                    "type": "boolean",
+                    "description": "Property 2"
+                  },
+                  "field3": {
+                    "type": "object",
+                    "description": "Property 3"
+                  },
+                  "field4": {
+                    "type": "boolean",
+                    "description": "Property 4"
+                  },
+                  "field5": {
+                    "type": "boolean",
+                    "description": "Property 5"
+                  },
+                  "field6": {
+                    "type": "object",
+                    "description": "Property 6"
+                  },
+                  "field7": {
+                    "type": "boolean",
+                    "description": "Property 7"
+                  },
+                  "field8": {
+                    "type": "boolean",
+                    "description": "Property 8"
+                  },
+                  "field9": {
+                    "type": "object",
+                    "description": "Property 9"
+                  },
+                  "field10": {
+                    "type": "boolean",
+                    "description": "Property 10"
+                  },
+                  "field11": {
+                    "type": "boolean",
+                    "description": "Property 11"
+                  },
+                  "field12": {
+                    "type": "object",
+                    "description": "Property 12"
+                  },
+                  "field13": {
+                    "type": "boolean",
+                    "description": "Property 13"
+                  },
+                  "field14": {
+                    "type": "boolean",
+                    "description": "Property 14"
+                  },
+                  "field15": {
+                    "type": "object",
+                    "description": "Property 15"
+                  },
+                  "field16": {
+                    "type": "boolean",
+                    "description": "Property 16"
+                  },
+                  "field17": {
+                    "type": "boolean",
+                    "description": "Property 17"
+                  },
+                  "field18": {
+                    "type": "object",
+                    "description": "Property 18"
+                  },
+                  "field19": {
+                    "type": "boolean",
+                    "description": "Property 19"
+                  },
+                  "field20": {
+                    "type": "boolean",
+                    "description": "Property 20"
+                  },
+                  "field21": {
+                    "type": "object",
+                    "description": "Property 21"
+                  },
+                  "field22": {
+                    "type": "boolean",
+                    "description": "Property 22"
+                  },
+                  "field23": {
+                    "type": "boolean",
+                    "description": "Property 23"
+                  },
+                  "field24": {
+                    "type": "object",
+                    "description": "Property 24"
+                  },
+                  "field25": {
+                    "type": "boolean",
+                    "description": "Property 25"
+                  },
+                  "field26": {
+                    "type": "boolean",
+                    "description": "Property 26"
+                  },
+                  "field27": {
+                    "type": "object",
+                    "description": "Property 27"
+                  },
+                  "field28": {
+                    "type": "boolean",
+                    "description": "Property 28"
+                  },
+                  "field29": {
+                    "type": "boolean",
+                    "description": "Property 29"
+                  },
+                  "field30": {
+                    "type": "object",
+                    "description": "Property 30"
+                  },
+                  "field31": {
+                    "type": "boolean",
+                    "description": "Property 31"
+                  },
+                  "field32": {
+                    "type": "boolean",
+                    "description": "Property 32"
+                  },
+                  "field33": {
+                    "type": "object",
+                    "description": "Property 33"
+                  },
+                  "field34": {
+                    "type": "boolean",
+                    "description": "Property 34"
+                  },
+                  "field35": {
+                    "type": "boolean",
+                    "description": "Property 35"
+                  },
+                  "field36": {
+                    "type": "object",
+                    "description": "Property 36"
+                  },
+                  "field37": {
+                    "type": "boolean",
+                    "description": "Property 37"
+                  },
+                  "field38": {
+                    "type": "boolean",
+                    "description": "Property 38"
+                  },
+                  "field39": {
+                    "type": "object",
+                    "description": "Property 39"
+                  },
+                  "field40": {
+                    "type": "boolean",
+                    "description": "Property 40"
+                  },
+                  "field41": {
+                    "type": "boolean",
+                    "description": "Property 41"
+                  },
+                  "field42": {
+                    "type": "object",
+                    "description": "Property 42"
+                  },
+                  "field43": {
+                    "type": "boolean",
+                    "description": "Property 43"
+                  },
+                  "field44": {
+                    "type": "boolean",
+                    "description": "Property 44"
+                  },
+                  "field45": {
+                    "type": "object",
+                    "description": "Property 45"
+                  },
+                  "field46": {
+                    "type": "boolean",
+                    "description": "Property 46"
+                  },
+                  "field47": {
+                    "type": "boolean",
+                    "description": "Property 47"
+                  },
+                  "field48": {
+                    "type": "object",
+                    "description": "Property 48"
+                  },
+                  "field49": {
+                    "type": "boolean",
+                    "description": "Property 49"
+                  },
+                  "field50": {
+                    "type": "boolean",
+                    "description": "Property 50"
+                  },
+                  "field51": {
+                    "type": "object",
+                    "description": "Property 51"
+                  },
+                  "field52": {
+                    "type": "boolean",
+                    "description": "Property 52"
+                  },
+                  "field53": {
+                    "type": "boolean",
+                    "description": "Property 53"
+                  },
+                  "field54": {
+                    "type": "object",
+                    "description": "Property 54"
+                  },
+                  "field55": {
+                    "type": "boolean",
+                    "description": "Property 55"
+                  },
+                  "field56": {
+                    "type": "boolean",
+                    "description": "Property 56"
+                  },
+                  "field57": {
+                    "type": "object",
+                    "description": "Property 57"
+                  },
+                  "field58": {
+                    "type": "boolean",
+                    "description": "Property 58"
+                  },
+                  "field59": {
+                    "type": "boolean",
+                    "description": "Property 59"
+                  },
+                  "field60": {
+                    "type": "object",
+                    "description": "Property 60"
+                  },
+                  "field61": {
+                    "type": "boolean",
+                    "description": "Property 61"
+                  },
+                  "field62": {
+                    "type": "boolean",
+                    "description": "Property 62"
+                  },
+                  "field63": {
+                    "type": "object",
+                    "description": "Property 63"
+                  },
+                  "field64": {
+                    "type": "boolean",
+                    "description": "Property 64"
+                  },
+                  "field65": {
+                    "type": "boolean",
+                    "description": "Property 65"
+                  },
+                  "field66": {
+                    "type": "object",
+                    "description": "Property 66"
+                  },
+                  "field67": {
+                    "type": "boolean",
+                    "description": "Property 67"
+                  },
+                  "field68": {
+                    "type": "boolean",
+                    "description": "Property 68"
+                  },
+                  "field69": {
+                    "type": "object",
+                    "description": "Property 69"
+                  },
+                  "field70": {
+                    "type": "boolean",
+                    "description": "Property 70"
+                  },
+                  "field71": {
+                    "type": "boolean",
+                    "description": "Property 71"
+                  },
+                  "field72": {
+                    "type": "object",
+                    "description": "Property 72"
+                  },
+                  "field73": {
+                    "type": "boolean",
+                    "description": "Property 73"
+                  },
+                  "field74": {
+                    "type": "boolean",
+                    "description": "Property 74"
+                  },
+                  "field75": {
+                    "type": "object",
+                    "description": "Property 75"
+                  },
+                  "field76": {
+                    "type": "boolean",
+                    "description": "Property 76"
+                  },
+                  "field77": {
+                    "type": "boolean",
+                    "description": "Property 77"
+                  },
+                  "field78": {
+                    "type": "object",
+                    "description": "Property 78"
+                  },
+                  "field79": {
+                    "type": "boolean",
+                    "description": "Property 79"
+                  },
+                  "field80": {
+                    "type": "boolean",
+                    "description": "Property 80"
+                  },
+                  "field81": {
+                    "type": "object",
+                    "description": "Property 81"
+                  },
+                  "field82": {
+                    "type": "boolean",
+                    "description": "Property 82"
+                  },
+                  "field83": {
+                    "type": "boolean",
+                    "description": "Property 83"
+                  },
+                  "field84": {
+                    "type": "object",
+                    "description": "Property 84"
+                  },
+                  "field85": {
+                    "type": "boolean",
+                    "description": "Property 85"
+                  },
+                  "field86": {
+                    "type": "boolean",
+                    "description": "Property 86"
+                  },
+                  "field87": {
+                    "type": "object",
+                    "description": "Property 87"
+                  },
+                  "field88": {
+                    "type": "boolean",
+                    "description": "Property 88"
+                  },
+                  "field89": {
+                    "type": "boolean",
+                    "description": "Property 89"
+                  },
+                  "field90": {
+                    "type": "object",
+                    "description": "Property 90"
+                  },
+                  "field91": {
+                    "type": "boolean",
+                    "description": "Property 91"
+                  },
+                  "field92": {
+                    "type": "boolean",
+                    "description": "Property 92"
+                  },
+                  "field93": {
+                    "type": "object",
+                    "description": "Property 93"
+                  },
+                  "field94": {
+                    "type": "boolean",
+                    "description": "Property 94"
+                  },
+                  "field95": {
+                    "type": "boolean",
+                    "description": "Property 95"
+                  },
+                  "field96": {
+                    "type": "object",
+                    "description": "Property 96"
+                  },
+                  "field97": {
+                    "type": "boolean",
+                    "description": "Property 97"
+                  },
+                  "field98": {
+                    "type": "boolean",
+                    "description": "Property 98"
+                  },
+                  "field99": {
+                    "type": "object",
+                    "description": "Property 99"
+                  },
+                  "field100": {
+                    "type": "boolean",
+                    "description": "Property 100"
+                  },
+                  "field101": {
+                    "type": "boolean",
+                    "description": "Property 101"
+                  },
+                  "field102": {
+                    "type": "object",
+                    "description": "Property 102"
+                  },
+                  "field103": {
+                    "type": "boolean",
+                    "description": "Property 103"
+                  },
+                  "field104": {
+                    "type": "boolean",
+                    "description": "Property 104"
+                  },
+                  "field105": {
+                    "type": "object",
+                    "description": "Property 105"
+                  },
+                  "field106": {
+                    "type": "boolean",
+                    "description": "Property 106"
+                  },
+                  "field107": {
+                    "type": "boolean",
+                    "description": "Property 107"
+                  },
+                  "field108": {
+                    "type": "object",
+                    "description": "Property 108"
+                  },
+                  "field109": {
+                    "type": "boolean",
+                    "description": "Property 109"
+                  },
+                  "field110": {
+                    "type": "boolean",
+                    "description": "Property 110"
+                  },
+                  "field111": {
+                    "type": "object",
+                    "description": "Property 111"
+                  },
+                  "field112": {
+                    "type": "boolean",
+                    "description": "Property 112"
+                  },
+                  "field113": {
+                    "type": "boolean",
+                    "description": "Property 113"
+                  },
+                  "field114": {
+                    "type": "object",
+                    "description": "Property 114"
+                  },
+                  "field115": {
+                    "type": "boolean",
+                    "description": "Property 115"
+                  },
+                  "field116": {
+                    "type": "boolean",
+                    "description": "Property 116"
+                  },
+                  "field117": {
+                    "type": "object",
+                    "description": "Property 117"
+                  },
+                  "field118": {
+                    "type": "boolean",
+                    "description": "Property 118"
+                  },
+                  "field119": {
+                    "type": "boolean",
+                    "description": "Property 119"
+                  }
+                }
+              },
+              "example": {
+                "field0": true,
+                "field1": false,
+                "field2": true,
+                "field3": false,
+                "field4": true,
+                "field5": false,
+                "field6": true,
+                "field7": false,
+                "field8": true,
+                "field9": false,
+                "field10": true,
+                "field11": false,
+                "field12": true,
+                "field13": false,
+                "field14": true,
+                "field15": false,
+                "field16": true,
+                "field17": false,
+                "field18": true,
+                "field19": false,
+                "field20": true,
+                "field21": false,
+                "field22": true,
+                "field23": false,
+                "field24": true,
+                "field25": false,
+                "field26": true,
+                "field27": false,
+                "field28": true,
+                "field29": false,
+                "field30": true,
+                "field31": false,
+                "field32": true,
+                "field33": false,
+                "field34": true,
+                "field35": false,
+                "field36": true,
+                "field37": false,
+                "field38": true,
+                "field39": false,
+                "field40": true,
+                "field41": false,
+                "field42": true,
+                "field43": false,
+                "field44": true,
+                "field45": false,
+                "field46": true,
+                "field47": false,
+                "field48": true,
+                "field49": false,
+                "field50": true,
+                "field51": false,
+                "field52": true,
+                "field53": false,
+                "field54": true,
+                "field55": false,
+                "field56": true,
+                "field57": false,
+                "field58": true,
+                "field59": false,
+                "field60": true,
+                "field61": false,
+                "field62": true,
+                "field63": false,
+                "field64": true,
+                "field65": false,
+                "field66": true,
+                "field67": false,
+                "field68": true,
+                "field69": false,
+                "field70": true,
+                "field71": false,
+                "field72": true,
+                "field73": false,
+                "field74": true,
+                "field75": false,
+                "field76": true,
+                "field77": false,
+                "field78": true,
+                "field79": false,
+                "field80": true,
+                "field81": false,
+                "field82": true,
+                "field83": false,
+                "field84": true,
+                "field85": false,
+                "field86": true,
+                "field87": false,
+                "field88": true,
+                "field89": false,
+                "field90": true,
+                "field91": false,
+                "field92": true,
+                "field93": false,
+                "field94": true,
+                "field95": false,
+                "field96": true,
+                "field97": false,
+                "field98": true,
+                "field99": false,
+                "field100": true,
+                "field101": false,
+                "field102": true,
+                "field103": false,
+                "field104": true,
+                "field105": false,
+                "field106": true,
+                "field107": false,
+                "field108": true,
+                "field109": false,
+                "field110": true,
+                "field111": false,
+                "field112": true,
+                "field113": false,
+                "field114": true,
+                "field115": false,
+                "field116": true,
+                "field117": false,
+                "field118": true,
+                "field119": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "respField0": {
+                      "type": "string",
+                      "description": "Response field 0"
+                    },
+                    "respField1": {
+                      "type": "string",
+                      "description": "Response field 1"
+                    },
+                    "respField2": {
+                      "type": "string",
+                      "description": "Response field 2"
+                    },
+                    "respField3": {
+                      "type": "string",
+                      "description": "Response field 3"
+                    },
+                    "respField4": {
+                      "type": "string",
+                      "description": "Response field 4"
+                    },
+                    "respField5": {
+                      "type": "string",
+                      "description": "Response field 5"
+                    },
+                    "respField6": {
+                      "type": "string",
+                      "description": "Response field 6"
+                    },
+                    "respField7": {
+                      "type": "string",
+                      "description": "Response field 7"
+                    },
+                    "respField8": {
+                      "type": "string",
+                      "description": "Response field 8"
+                    },
+                    "respField9": {
+                      "type": "string",
+                      "description": "Response field 9"
+                    },
+                    "respField10": {
+                      "type": "string",
+                      "description": "Response field 10"
+                    },
+                    "respField11": {
+                      "type": "string",
+                      "description": "Response field 11"
+                    },
+                    "respField12": {
+                      "type": "string",
+                      "description": "Response field 12"
+                    },
+                    "respField13": {
+                      "type": "string",
+                      "description": "Response field 13"
+                    },
+                    "respField14": {
+                      "type": "string",
+                      "description": "Response field 14"
+                    },
+                    "respField15": {
+                      "type": "string",
+                      "description": "Response field 15"
+                    },
+                    "respField16": {
+                      "type": "string",
+                      "description": "Response field 16"
+                    },
+                    "respField17": {
+                      "type": "string",
+                      "description": "Response field 17"
+                    },
+                    "respField18": {
+                      "type": "string",
+                      "description": "Response field 18"
+                    },
+                    "respField19": {
+                      "type": "string",
+                      "description": "Response field 19"
+                    },
+                    "respField20": {
+                      "type": "string",
+                      "description": "Response field 20"
+                    },
+                    "respField21": {
+                      "type": "string",
+                      "description": "Response field 21"
+                    },
+                    "respField22": {
+                      "type": "string",
+                      "description": "Response field 22"
+                    },
+                    "respField23": {
+                      "type": "string",
+                      "description": "Response field 23"
+                    },
+                    "respField24": {
+                      "type": "string",
+                      "description": "Response field 24"
+                    },
+                    "respField25": {
+                      "type": "string",
+                      "description": "Response field 25"
+                    },
+                    "respField26": {
+                      "type": "string",
+                      "description": "Response field 26"
+                    },
+                    "respField27": {
+                      "type": "string",
+                      "description": "Response field 27"
+                    },
+                    "respField28": {
+                      "type": "string",
+                      "description": "Response field 28"
+                    },
+                    "respField29": {
+                      "type": "string",
+                      "description": "Response field 29"
+                    },
+                    "respField30": {
+                      "type": "string",
+                      "description": "Response field 30"
+                    },
+                    "respField31": {
+                      "type": "string",
+                      "description": "Response field 31"
+                    },
+                    "respField32": {
+                      "type": "string",
+                      "description": "Response field 32"
+                    },
+                    "respField33": {
+                      "type": "string",
+                      "description": "Response field 33"
+                    },
+                    "respField34": {
+                      "type": "string",
+                      "description": "Response field 34"
+                    },
+                    "respField35": {
+                      "type": "string",
+                      "description": "Response field 35"
+                    },
+                    "respField36": {
+                      "type": "string",
+                      "description": "Response field 36"
+                    },
+                    "respField37": {
+                      "type": "string",
+                      "description": "Response field 37"
+                    },
+                    "respField38": {
+                      "type": "string",
+                      "description": "Response field 38"
+                    },
+                    "respField39": {
+                      "type": "string",
+                      "description": "Response field 39"
+                    },
+                    "respField40": {
+                      "type": "string",
+                      "description": "Response field 40"
+                    },
+                    "respField41": {
+                      "type": "string",
+                      "description": "Response field 41"
+                    },
+                    "respField42": {
+                      "type": "string",
+                      "description": "Response field 42"
+                    },
+                    "respField43": {
+                      "type": "string",
+                      "description": "Response field 43"
+                    },
+                    "respField44": {
+                      "type": "string",
+                      "description": "Response field 44"
+                    },
+                    "respField45": {
+                      "type": "string",
+                      "description": "Response field 45"
+                    },
+                    "respField46": {
+                      "type": "string",
+                      "description": "Response field 46"
+                    },
+                    "respField47": {
+                      "type": "string",
+                      "description": "Response field 47"
+                    },
+                    "respField48": {
+                      "type": "string",
+                      "description": "Response field 48"
+                    },
+                    "respField49": {
+                      "type": "string",
+                      "description": "Response field 49"
+                    },
+                    "respField50": {
+                      "type": "string",
+                      "description": "Response field 50"
+                    },
+                    "respField51": {
+                      "type": "string",
+                      "description": "Response field 51"
+                    },
+                    "respField52": {
+                      "type": "string",
+                      "description": "Response field 52"
+                    },
+                    "respField53": {
+                      "type": "string",
+                      "description": "Response field 53"
+                    },
+                    "respField54": {
+                      "type": "string",
+                      "description": "Response field 54"
+                    },
+                    "respField55": {
+                      "type": "string",
+                      "description": "Response field 55"
+                    },
+                    "respField56": {
+                      "type": "string",
+                      "description": "Response field 56"
+                    },
+                    "respField57": {
+                      "type": "string",
+                      "description": "Response field 57"
+                    },
+                    "respField58": {
+                      "type": "string",
+                      "description": "Response field 58"
+                    },
+                    "respField59": {
+                      "type": "string",
+                      "description": "Response field 59"
+                    },
+                    "respField60": {
+                      "type": "string",
+                      "description": "Response field 60"
+                    },
+                    "respField61": {
+                      "type": "string",
+                      "description": "Response field 61"
+                    },
+                    "respField62": {
+                      "type": "string",
+                      "description": "Response field 62"
+                    },
+                    "respField63": {
+                      "type": "string",
+                      "description": "Response field 63"
+                    },
+                    "respField64": {
+                      "type": "string",
+                      "description": "Response field 64"
+                    },
+                    "respField65": {
+                      "type": "string",
+                      "description": "Response field 65"
+                    },
+                    "respField66": {
+                      "type": "string",
+                      "description": "Response field 66"
+                    },
+                    "respField67": {
+                      "type": "string",
+                      "description": "Response field 67"
+                    },
+                    "respField68": {
+                      "type": "string",
+                      "description": "Response field 68"
+                    },
+                    "respField69": {
+                      "type": "string",
+                      "description": "Response field 69"
+                    },
+                    "respField70": {
+                      "type": "string",
+                      "description": "Response field 70"
+                    },
+                    "respField71": {
+                      "type": "string",
+                      "description": "Response field 71"
+                    },
+                    "respField72": {
+                      "type": "string",
+                      "description": "Response field 72"
+                    },
+                    "respField73": {
+                      "type": "string",
+                      "description": "Response field 73"
+                    },
+                    "respField74": {
+                      "type": "string",
+                      "description": "Response field 74"
+                    },
+                    "respField75": {
+                      "type": "string",
+                      "description": "Response field 75"
+                    },
+                    "respField76": {
+                      "type": "string",
+                      "description": "Response field 76"
+                    },
+                    "respField77": {
+                      "type": "string",
+                      "description": "Response field 77"
+                    },
+                    "respField78": {
+                      "type": "string",
+                      "description": "Response field 78"
+                    },
+                    "respField79": {
+                      "type": "string",
+                      "description": "Response field 79"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  }
+}

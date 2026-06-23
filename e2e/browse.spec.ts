@@ -25,6 +25,31 @@ test.describe('browse API documentation', () => {
     await expect(page.getByTestId('operation-get:/alpha/a')).toBeVisible()
   })
 
+  test('opening another tag does not scroll to the expanded operation', async ({ page }) => {
+    await expandOperation(page, 'get:/alpha/a')
+    await page.evaluate(() => window.scrollTo(0, 500))
+    const scrollBefore = await page.evaluate(() => window.scrollY)
+
+    await page.getByTestId('tag-section-beta').getByRole('button').click()
+    await expect(page.getByTestId('operation-get:/beta/x')).toBeVisible()
+
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore)
+  })
+
+  test('expanding an operation keeps its header in place on screen', async ({ page }) => {
+    await page.getByTestId('tag-section-alpha').getByRole('button').click()
+    const op = operationLocator(page, 'get:/alpha/a')
+    await op.scrollIntoViewIfNeeded()
+
+    const headerTopBefore = await op.locator('[data-op-header]').evaluate((el) => el.getBoundingClientRect().top)
+
+    await op.getByRole('button').first().click()
+    await expect(op.getByTestId('execute')).toBeVisible()
+
+    const headerTopAfter = await op.locator('[data-op-header]').evaluate((el) => el.getBoundingClientRect().top)
+    expect(headerTopAfter).toBeGreaterThanOrEqual(headerTopBefore - 2)
+  })
+
   test('shows operation method, path, summary, and lock icon', async ({ page }) => {
     await page.getByTestId('tag-section-alpha').getByRole('button').click()
     const op = page.getByTestId('operation-get:/alpha/a')

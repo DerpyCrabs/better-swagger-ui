@@ -8,6 +8,12 @@ import {
   tagDescriptions,
   type OperationItem,
 } from '../lib/operations'
+import {
+  scrollToOperationHeader,
+  operationHeaderElement,
+  scheduleOperationHeaderViewportRestore,
+  runPendingOperationHeaderViewportRestore,
+} from '../lib/operation-scroll'
 import { MarkdownText } from './MarkdownText'
 import { OperationBlock } from './OperationBlock'
 import { SpecSchemaActions } from './SpecSchemaActions'
@@ -15,46 +21,14 @@ import { SpecSchemaActions } from './SpecSchemaActions'
 interface ApiDocumentProps {
   loaded: LoadedSpec
   expandedOp: string | null
-  scrollToOp: string | null
-  onScrollToOpDone: () => void
+  /** Operation id from the initial ?op= query param; scroll to it once after first render. */
+  initialOp: string | null
   onExpandedOpChange: (op: string | null) => void
-  onExpandOperation: (op: string) => void
-}
-
-function stickyHeaderHeight(): number {
-  return document.querySelector('header')?.getBoundingClientRect().height ?? 0
-}
-
-function isOperationHeaderVisible(opId: string): boolean {
-  const el = document.querySelector(`[data-op-id="${CSS.escape(opId)}"]`)
-  if (!el) return false
-
-  const headerEl = el.querySelector('[data-op-header]') ?? el
-  const rect = headerEl.getBoundingClientRect()
-  const topInset = stickyHeaderHeight()
-
-  return rect.bottom > topInset && rect.top < window.innerHeight
-}
-
-function scrollToOperation(opId: string, smooth = false) {
-  if (isOperationHeaderVisible(opId)) return
-
-  const el = document.querySelector(`[data-op-id="${CSS.escape(opId)}"]`)
-  el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'start' })
-}
-
-function queueScrollToOperation(opId: string, smooth = false) {
-  const scroll = () => scrollToOperation(opId, smooth)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      scroll()
-      window.setTimeout(scroll, 0)
-    })
-  })
 }
 
 export function ApiDocument(props: ApiDocumentProps) {
   const [openTags, setOpenTags] = createSignal<Set<string>>(new Set())
+  let initialOpScrolled = false
 
   const grouped = () => collectOperations(props.loaded.spec)
   const descriptions = () => tagDescriptions(props.loaded.spec)
@@ -71,24 +45,30 @@ export function ApiDocument(props: ApiDocumentProps) {
   })
 
   createEffect(() => {
-    const op = props.expandedOp
-    if (!op) return
+    const op = props.initialOp
+    if (!op || initialOpScrolled || props.expandedOp !== op) return
 
     props.loaded.specUrl
     const groups = grouped()
 
-    if (props.scrollToOp === op && !operationExists(groups, op)) {
-      props.onScrollToOpDone()
+    if (!operationExists(groups, op)) {
+      initialOpScrolled = true
       return
     }
 
     const tag = findOperationTag(groups, op)
     if (!tag || !openTags().has(tag)) return
 
-    queueScrollToOperation(op, props.scrollToOp === op)
-    if (props.scrollToOp === op) {
-      props.onScrollToOpDone()
-    }
+    initialOpScrolled = true
+    requestAnimationFrame(() => scrollToOperationHeader(op))
+  })
+
+  createEffect(() => {
+    props.expandedOp
+    props.loaded.specUrl
+    openTags()
+
+    runPendingOperationHeaderViewportRestore()
   })
 
   const toggleTag = (tag: string) => {
@@ -102,6 +82,13 @@ export function ApiDocument(props: ApiDocumentProps) {
 
   const toggleOperation = (item: OperationItem) => {
     const next = props.expandedOp === item.id ? null : item.id
+    const anchorOpId = next ?? item.id
+    const anchorTop = operationHeaderElement(anchorOpId)?.getBoundingClientRect().top ?? null
+
+    if (anchorTop !== null) {
+      scheduleOperationHeaderViewportRestore(anchorOpId, anchorTop)
+    }
+
     props.onExpandedOpChange(next)
 
     if (next) {
@@ -161,7 +148,7 @@ export function ApiDocument(props: ApiDocumentProps) {
                 </button>
 
                 <Show when={isOpen()}>
-                  <div class="space-y-0 border-t border-zinc-200 p-2 dark:border-t-dm-border">
+                  <div class="space-y-0 border-t border-zinc-200 p-2 [overflow-anchor:none] dark:border-t-dm-border">
                     <For each={operations}>
                       {(item) => (
                         <OperationBlock
@@ -170,7 +157,7 @@ export function ApiDocument(props: ApiDocumentProps) {
                           serverUrl={serverUrl()}
                           specUrl={props.loaded.specUrl}
                           expanded={props.expandedOp === item.id}
-                          onAuthorizeFromLock={() => props.onExpandOperation(item.id)}
+                          onAuthorizeFromLock={() => props.onExpandedOpChange(item.id)}
                           onToggle={() => toggleOperation(item)}
                         />
                       )}

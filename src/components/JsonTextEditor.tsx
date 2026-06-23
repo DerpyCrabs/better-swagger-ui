@@ -3,7 +3,14 @@ import { createStore, reconcile } from 'solid-js/store'
 import { createVirtualizer } from '@tanstack/solid-virtual'
 import hljs from 'highlight.js/lib/core'
 import jsonLang from 'highlight.js/lib/languages/json'
-import { Braces, FoldVertical, UnfoldVertical } from '../icons'
+import { Braces, ChevronLeft, ChevronRight, FoldVertical, Search, UnfoldVertical, X } from '../icons'
+import {
+  findJsonSearchMatches,
+  foldIdsToRevealLine,
+  injectSearchMarksInHighlightedLine,
+  searchMatchScrollTop,
+  type JsonSearchMatch,
+} from '../lib/json-search'
 import { CopyButton } from './CopyButton'
 import {
   applyVisibleTextEdit,
@@ -89,6 +96,7 @@ export interface JsonTextEditorProps {
   onBlur?: () => void
   copyText?: () => string
   copyTestId?: string
+  searchable?: boolean
 }
 
 export interface JsonViewerProps {
@@ -100,6 +108,101 @@ export interface JsonViewerProps {
   testId?: string
   copyText?: () => string
   copyTestId?: string
+  searchable?: boolean
+}
+
+function JsonSearchBar(props: {
+  query: string
+  matchLabel: string
+  hasMatches: boolean
+  onQueryChange: (query: string) => void
+  onPrevious: () => void
+  onNext: () => void
+  onClose: () => void
+  onInputRef: (element: HTMLInputElement | undefined) => void
+}) {
+  return (
+    <div
+      data-testid="json-search-bar"
+      class="flex items-center gap-1 border-b border-zinc-200 bg-white/95 px-2 py-1 dark:border-zinc-800 dark:bg-zinc-900/95"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <Search size={14} class="shrink-0 text-zinc-500 dark:text-zinc-400" />
+      <input
+        ref={props.onInputRef}
+        type="search"
+        data-testid="json-search-input"
+        value={props.query}
+        placeholder="Search JSON…"
+        spellcheck={false}
+        class="min-w-0 flex-1 bg-transparent px-1 py-0.5 text-[12px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+        onInput={(event) => props.onQueryChange(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          event.stopPropagation()
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            if (event.shiftKey) props.onPrevious()
+            else props.onNext()
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            props.onClose()
+          }
+        }}
+      />
+      <span
+        data-testid="json-search-count"
+        class={`shrink-0 px-1 text-[11px] tabular-nums ${
+          props.hasMatches
+            ? 'text-zinc-600 dark:text-zinc-300'
+            : 'text-zinc-400 dark:text-zinc-500'
+        }`}
+      >
+        {props.matchLabel}
+      </span>
+      <button
+        type="button"
+        data-testid="json-search-previous"
+        title="Previous match (Shift+Enter)"
+        aria-label="Previous match"
+        disabled={!props.hasMatches}
+        class={`${foldToolbarButtonClass()} disabled:opacity-40`}
+        onClick={(event) => {
+          event.stopPropagation()
+          props.onPrevious()
+        }}
+      >
+        <ChevronLeft size={14} />
+      </button>
+      <button
+        type="button"
+        data-testid="json-search-next"
+        title="Next match (Enter)"
+        aria-label="Next match"
+        disabled={!props.hasMatches}
+        class={`${foldToolbarButtonClass()} disabled:opacity-40`}
+        onClick={(event) => {
+          event.stopPropagation()
+          props.onNext()
+        }}
+      >
+        <ChevronRight size={14} />
+      </button>
+      <button
+        type="button"
+        data-testid="json-search-close"
+        title="Close search (Esc)"
+        aria-label="Close search"
+        class={foldToolbarButtonClass()}
+        onClick={(event) => {
+          event.stopPropagation()
+          props.onClose()
+        }}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  )
 }
 
 function FoldControl(props: {
@@ -157,12 +260,33 @@ function FloatingEditorActions(props: {
   showFormat: boolean
   canFormat: boolean
   onFormat: () => void
+  showSearch: boolean
+  searchActive: boolean
+  onToggleSearch: () => void
   copyText?: () => string
   copyTestId?: string
 }) {
   return (
     <div class="pointer-events-none absolute top-1 right-5 z-30">
       <div class="pointer-events-auto flex gap-0.5 rounded border border-zinc-300/80 bg-white/95 p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/95">
+        <Show when={props.showSearch}>
+          <button
+            type="button"
+            data-testid="json-search-toggle"
+            title="Search (Ctrl+F)"
+            aria-label="Search"
+            aria-pressed={props.searchActive}
+            class={`${foldToolbarButtonClass()} ${
+              props.searchActive ? 'bg-sky-100 dark:bg-sky-950/60' : 'bg-zinc-50 dark:bg-zinc-900/80'
+            }`}
+            onClick={(event) => {
+              event.stopPropagation()
+              props.onToggleSearch()
+            }}
+          >
+            <Search size={14} />
+          </button>
+        </Show>
         <Show when={props.showFold}>
           <FoldAllToggle expanded={props.expanded} onToggle={props.onToggleFolds} />
         </Show>
@@ -198,10 +322,14 @@ function FoldAllToggle(props: { expanded: boolean; onToggle: () => void }) {
 export function JsonTextEditor(props: JsonTextEditorProps) {
   let scrollRef: HTMLDivElement | undefined
   let textareaRef: HTMLTextAreaElement | undefined
+  let searchInputRef: HTMLInputElement | undefined
   const [editableScrollTop, setEditableScrollTop] = createSignal(0)
   const [lines, setLines] = createSignal<string[]>([''])
   const [collapsed, setCollapsed] = createStore<Record<string, boolean>>({})
   const [language, setLanguage] = createSignal<'json' | 'plaintext'>('json')
+  const [searchOpen, setSearchOpen] = createSignal(false)
+  const [searchQuery, setSearchQuery] = createSignal('')
+  const [activeMatchIndex, setActiveMatchIndex] = createSignal(0)
 
   createEffect(() => {
     const nextLines = splitJsonLines(props.value)
@@ -232,6 +360,110 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
   const visibleText = createMemo(() =>
     visibleTextFromLines(lines(), regions(), collapsedSet(), props.collapsible !== false),
   )
+
+  const searchable = () => props.searchable !== false
+  const searchMatches = createMemo(() => findJsonSearchMatches(lines(), searchQuery()))
+  const activeSearchMatch = createMemo((): JsonSearchMatch | undefined => {
+    const matches = searchMatches()
+    if (matches.length === 0) return undefined
+    const index = activeMatchIndex() % matches.length
+    return matches[index < 0 ? index + matches.length : index]
+  })
+  const searchMatchLabel = createMemo(() => {
+    const matches = searchMatches()
+    if (!searchQuery().trim()) return ''
+    if (matches.length === 0) return 'No results'
+    const index = activeSearchMatch()?.globalIndex ?? 0
+    return `${index + 1}/${matches.length}`
+  })
+
+  createEffect(() => {
+    searchQuery()
+    setActiveMatchIndex(0)
+  })
+
+  const scrollToSearchMatch = (match: JsonSearchMatch) => {
+    const rowIndex = visibleRows().findIndex((row) => row.lineIndex === match.lineIndex)
+    if (rowIndex === -1) return
+
+    const scrollTop = searchMatchScrollTop(rowIndex, LINE_HEIGHT)
+
+    if (shouldVirtualize()) {
+      virtualizer.scrollToIndex(rowIndex, { align: 'start' })
+      queueMicrotask(() => {
+        if (scrollRef) scrollRef.scrollTop = scrollTop
+      })
+      return
+    }
+
+    if (scrollRef) scrollRef.scrollTop = scrollTop
+    if (textareaRef) textareaRef.scrollTop = scrollTop
+  }
+
+  createEffect(() => {
+    const match = activeSearchMatch()
+    if (!searchOpen() || !match) return
+
+    for (const foldId of foldIdsToRevealLine(match.lineIndex, regions(), collapsedSet())) {
+      setCollapsed(foldId, false)
+    }
+
+    queueMicrotask(() => scrollToSearchMatch(match))
+  })
+
+  const openSearch = () => {
+    setSearchOpen(true)
+    queueMicrotask(() => {
+      searchInputRef?.focus()
+      searchInputRef?.select()
+    })
+  }
+
+  const closeSearch = () => {
+    setSearchOpen(false)
+    setSearchQuery('')
+    setActiveMatchIndex(0)
+  }
+
+  const toggleSearch = () => {
+    if (searchOpen()) closeSearch()
+    else openSearch()
+  }
+
+  const goToNextMatch = () => {
+    const matches = searchMatches()
+    if (matches.length === 0) return
+    setActiveMatchIndex((index) => (index + 1) % matches.length)
+  }
+
+  const goToPreviousMatch = () => {
+    const matches = searchMatches()
+    if (matches.length === 0) return
+    setActiveMatchIndex((index) => (index - 1 + matches.length) % matches.length)
+  }
+
+  const handleEditorKeyDown = (event: KeyboardEvent) => {
+    if (!searchable()) return
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+      event.preventDefault()
+      openSearch()
+    }
+  }
+
+  const lineHtml = (text: string, lineIndex: number) => {
+    const highlighted =
+      highlightedLines().get(lineIndex) ?? highlightLine(text, language(), shouldHighlight())
+    const query = searchQuery().trim()
+    if (!query) return highlighted
+
+    return injectSearchMarksInHighlightedLine(
+      highlighted,
+      text,
+      lineIndex,
+      searchMatches(),
+      activeSearchMatch()?.globalIndex ?? -1,
+    )
+  }
 
   const shouldHighlight = createMemo(
     () =>
@@ -394,13 +626,7 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
       )
     }
 
-    return (
-      <span
-        innerHTML={
-          highlightedLines().get(row.lineIndex) ?? highlightLine(content, lang(), highlight())
-        }
-      />
-    )
+    return <span innerHTML={lineHtml(content, row.lineIndex)} />
   }
 
   const displayFoldControls = () => (props.readOnly ? 'inline' : 'overlay')
@@ -526,6 +752,7 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
         class="absolute inset-0 z-10 block h-full w-full resize-none overflow-auto border-0 bg-transparent px-3 py-1 font-mono text-[13px] leading-5 text-transparent caret-zinc-900 outline-none selection:bg-sky-300/40 dark:caret-zinc-100 dark:selection:bg-sky-500/30"
         onInput={(event) => handleTextareaInput(event.currentTarget.value)}
         onScroll={(event) => setEditableScrollTop(event.currentTarget.scrollTop)}
+        onKeyDown={handleEditorKeyDown}
         onBlur={() => props.onBlur?.()}
       />
       <div
@@ -552,7 +779,11 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
   )
 
   const showFloatingActions = createMemo(
-    () => showFoldToolbar() || showFormatToolbar() || Boolean(props.copyText),
+    () =>
+      searchable() ||
+      showFoldToolbar() ||
+      showFormatToolbar() ||
+      Boolean(props.copyText),
   )
 
   const containerStyle = () =>
@@ -565,29 +796,52 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
         props.readOnly ? 'flex flex-col overflow-hidden' : ''
       } ${props.class ?? ''}`}
       style={containerStyle()}
+      onKeyDown={handleEditorKeyDown}
     >
-      <Show when={showFloatingActions()}>
-        <FloatingEditorActions
-          showFold={showFoldToolbar()}
-          expanded={allNestedExpanded()}
-          onToggleFolds={toggleAllFolds}
-          showFormat={showFormatToolbar()}
-          canFormat={language() === 'json'}
-          onFormat={handleFormat}
-          copyText={props.copyText}
-          copyTestId={props.copyTestId}
+      <Show when={searchOpen() && searchable()}>
+        <JsonSearchBar
+          query={searchQuery()}
+          matchLabel={searchMatchLabel()}
+          hasMatches={searchMatches().length > 0}
+          onQueryChange={setSearchQuery}
+          onPrevious={goToPreviousMatch}
+          onNext={goToNextMatch}
+          onClose={closeSearch}
+          onInputRef={(element) => {
+            searchInputRef = element
+          }}
         />
       </Show>
 
-      <Show when={props.readOnly} fallback={renderEditableBody()}>
-        <div
-          ref={scrollRef}
-          class="min-h-0 flex-1 overflow-auto"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div class="relative w-full min-w-0 py-1">{renderReadOnlyBody()}</div>
-        </div>
-      </Show>
+      <div class={`relative min-w-0 ${props.readOnly ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
+        <Show when={showFloatingActions()}>
+          <FloatingEditorActions
+            showSearch={searchable() && !searchOpen()}
+            searchActive={searchOpen()}
+            onToggleSearch={toggleSearch}
+            showFold={showFoldToolbar()}
+            expanded={allNestedExpanded()}
+            onToggleFolds={toggleAllFolds}
+            showFormat={showFormatToolbar()}
+            canFormat={language() === 'json'}
+            onFormat={handleFormat}
+            copyText={props.copyText}
+            copyTestId={props.copyTestId}
+          />
+        </Show>
+
+        <Show when={props.readOnly} fallback={renderEditableBody()}>
+          <div
+            ref={scrollRef}
+            class="min-h-0 flex-1 overflow-auto"
+            tabindex={searchable() ? 0 : undefined}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={handleEditorKeyDown}
+          >
+            <div class="relative w-full min-w-0 py-1">{renderReadOnlyBody()}</div>
+          </div>
+        </Show>
+      </div>
     </div>
   )
 }
@@ -606,6 +860,7 @@ export function VirtualJsonViewer(props: JsonViewerProps) {
       testId="json-viewer"
       copyText={props.copyText}
       copyTestId={props.copyTestId}
+      searchable={props.searchable}
     />
   )
 }

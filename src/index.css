@@ -64,3 +64,42 @@ body {
 .dark .hljs-punctuation {
   color: #d4d4d4;
 }
+
+[data-testid='json-content'] [data-search-highlight] {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background-color: rgb(254 240 138 / 0.85);
+  color: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+[data-testid='json-content'] [data-search-highlight].json-search-mark-start {
+  border-top-left-radius: 0.125rem;
+  border-bottom-left-radius: 0.125rem;
+}
+
+[data-testid='json-content'] [data-search-highlight].json-search-mark-end {
+  border-top-right-radius: 0.125rem;
+  border-bottom-right-radius: 0.125rem;
+}
+
+[data-testid='json-content'] [data-search-highlight].json-search-mark-solo {
+  border-radius: 0.125rem;
+}
+
+.dark [data-testid='json-content'] [data-search-highlight] {
+  background-color: rgb(234 179 8 / 0.35);
+}
+
+[data-testid='json-content'] [data-search-highlight].json-search-mark-active {
+  background-color: rgb(251 191 36 / 0.95);
+}
+
+.dark [data-testid='json-content'] [data-search-highlight].json-search-mark-active {
+  background-color: rgb(245 158 11 / 0.65);
+}

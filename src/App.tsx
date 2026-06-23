@@ -33,7 +33,7 @@ function App() {
   )
   const [textSource, setTextSource] = createSignal<{ label: string; text: string } | null>(null)
   const [expandedOp, setExpandedOp] = createSignal<string | null>(initialRoute.op)
-  const [scrollToOp, setScrollToOp] = createSignal<string | null>(initialRoute.op)
+  const initialOp = initialRoute.op
 
   const definition = () => route().definition
   const headerUrl = () => sourceUrl() ?? textSource()?.label ?? ''
@@ -85,7 +85,6 @@ function App() {
     setTextSource(null)
     setSourceUrl(trimmed)
     setExpandedOp(null)
-    setScrollToOp(null)
     syncRoute(
       trimmed,
       null,
@@ -97,24 +96,16 @@ function App() {
     setSourceUrl(null)
     setTextSource({ label: sourceLabel, text })
     setExpandedOp(null)
-    setScrollToOp(null)
     syncRoute('', null, null)
   }
 
   const handleDefinitionChange = (name: string) => {
     setExpandedOp(null)
-    setScrollToOp(null)
     syncRoute(routeUrl(), null, definitionForRoute(name, definitions()))
   }
 
   const handleExpandedOpChange = (op: string | null) => {
     setExpandedOp(op)
-    syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
-  }
-
-  const handleExpandOperation = (op: string) => {
-    setExpandedOp(op)
-    setScrollToOp(op)
     syncRoute(routeUrl(), op, definitionForRoute(definition(), definitions()))
   }
 
@@ -142,19 +133,16 @@ function App() {
           setTextSource(null)
           setSourceUrl(trimmed)
           setExpandedOp(next.op)
-          setScrollToOp(next.op)
         }
         return
       }
 
       if (next.definition !== definition()) {
         setExpandedOp(null)
-        setScrollToOp(null)
         return
       }
 
       setExpandedOp(next.op)
-      setScrollToOp(next.op)
     })
   })
 
@@ -191,10 +179,8 @@ function App() {
               <ApiDocument
                 loaded={data()}
                 expandedOp={expandedOp()}
-                scrollToOp={scrollToOp()}
-                onScrollToOpDone={() => setScrollToOp(null)}
+                initialOp={initialOp}
                 onExpandedOpChange={handleExpandedOpChange}
-                onExpandOperation={handleExpandOperation}
               />
             </main>
           )}

@@ -188,6 +188,29 @@ export async function jsonEditorHasHighlightMarkup(editor: Locator) {
   )
 }
 
+export async function openJsonSearch(editor: Locator) {
+  await editor.getByTestId('json-search-toggle').click()
+  await expect(editor.getByTestId('json-search-bar')).toBeVisible()
+}
+
+export async function searchJsonEditor(editor: Locator, query: string) {
+  await openJsonSearch(editor)
+  await editor.getByTestId('json-search-input').fill(query)
+}
+
+export function jsonSearchMarks(editor: Locator) {
+  return editor.getByTestId('json-content').locator('[data-search-highlight]')
+}
+
+export async function jsonSearchActiveMarkText(editor: Locator) {
+  const mark = editor
+    .getByTestId('json-content')
+    .locator('[data-search-highlight].json-search-mark-active')
+    .first()
+  await expect(mark).toBeVisible()
+  return mark.innerText()
+}
+
 /** Mirror layer translateY should track textarea scrollTop in editable mode. */
 export async function jsonEditorMirrorOffset(editor: Locator) {
   return editor.evaluate((root) => {

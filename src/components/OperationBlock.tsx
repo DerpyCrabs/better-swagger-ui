@@ -454,7 +454,7 @@ export function OperationBlock(props: OperationBlockProps) {
     <div
       data-op-id={props.item.id}
       data-testid={`operation-${props.item.id}`}
-      class={`scroll-mt-24 mb-[10px] overflow-hidden rounded border ${dmBorder}`}
+      class={`mb-[10px] overflow-hidden rounded border [overflow-anchor:none] ${dmBorder}`}
     >
       <div
         data-op-header
@@ -509,7 +509,7 @@ export function OperationBlock(props: OperationBlockProps) {
       />
 
       <Show when={props.expanded}>
-        <div class={`px-3 py-3 ${methodExpandedBg(props.item.method)}`}>
+        <div class={`px-3 py-3 [overflow-anchor:none] ${methodExpandedBg(props.item.method)}`}>
           <Show when={props.item.operation.description && props.item.operation.summary}>
             <div class="mb-2 text-sm">
               <MarkdownText content={props.item.operation.description} />
