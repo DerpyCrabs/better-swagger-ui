@@ -25,6 +25,7 @@ import { MarkdownText } from './MarkdownText'
 import { ParamInput } from './ParamInput'
 import { RequestBodyPanel, ResponsesSchemaView } from './SchemaViews'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
+import { JsonTextEditor } from './JsonTextEditor'
 import { CopyButton } from './CopyButton'
 import { AuthorizeDialog } from './AuthorizeDialog'
 import { useAuth } from '../lib/auth-context'
@@ -312,6 +313,26 @@ export function OperationBlock(props: OperationBlockProps) {
         : 'border-zinc-300 focus:border-sky-500 focus:ring-sky-500/30 dark:focus:border-sky-500 dark:focus:ring-sky-500/40'
     }`
 
+  const renderJsonBodyEditor = () => (
+    <div class="space-y-0.5">
+      <JsonTextEditor
+        value={body()}
+        onChange={(value) => {
+          setBody(value)
+          if (bodyError()) setBodyError(null)
+        }}
+        onBlur={validateBodyOnBlur}
+        maxHeight="16rem"
+        class="w-full"
+        error={Boolean(bodyError())}
+        copyText={body}
+      />
+      <Show when={bodyError()}>
+        <p class="text-[11px] text-rose-600 dark:text-rose-400">{bodyError()}</p>
+      </Show>
+    </div>
+  )
+
   const renderTextBodyEditor = (rows = 6) => (
     <div class="space-y-0.5">
       <div class="flex max-w-lg items-start gap-2">
@@ -410,6 +431,8 @@ export function OperationBlock(props: OperationBlockProps) {
 
   const renderBodyEditor = () => {
     switch (requestBodyMode()) {
+      case 'json':
+        return renderJsonBodyEditor()
       case 'text':
         return renderTextBodyEditor()
       case 'file':
@@ -425,6 +448,9 @@ export function OperationBlock(props: OperationBlockProps) {
 
   const renderExampleViewer = () => {
     const mode = requestBodyMode()
+    if (mode === 'json') {
+      return <VirtualJsonViewer data={exampleBodyViewerData()} maxHeight="16rem" />
+    }
     if (mode === 'text') {
       return (
         <pre class={`overflow-x-auto rounded-md bg-zinc-50 px-3 py-2 text-xs whitespace-pre-wrap dark:bg-dm-surface ${dmMuted}`}>

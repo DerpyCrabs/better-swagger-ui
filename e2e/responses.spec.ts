@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
+  clickJsonFoldOnLineContaining,
   executeTryItOut,
   expandOperation,
+  jsonEditorInnerText,
   loadSpec,
   mockApi,
   openTryItOut,
   operationLocator,
+  responseJsonViewer,
   specUrl,
 } from './helpers'
 
@@ -35,6 +38,36 @@ test.describe('response handling', () => {
     const op = operationLocator(page, 'get:/json')
     await expect(op.getByTestId('response-status')).toContainText('200')
     await expect(op.getByTestId('response-body')).toContainText('hello')
+  })
+
+  test('collapses and expands nested JSON in response body', async ({ page }) => {
+    await mockApi(page, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'hello',
+          nested: { secret: 'hidden' },
+        }),
+      })
+    })
+
+    await expandOperation(page, 'get:/json')
+    await openTryItOut(page, 'get:/json')
+    await executeTryItOut(page, 'get:/json')
+
+    const op = operationLocator(page, 'get:/json')
+    const responseBody = op.getByTestId('response-body')
+    await expect(responseBody.getByTestId('json-viewer')).toBeVisible()
+    await expect(responseBody).toContainText('secret')
+
+    await clickJsonFoldOnLineContaining(responseBody.getByTestId('json-viewer'), '"nested"')
+    await expect.poll(async () =>
+      (await jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).includes('secret'),
+    ).toBe(false)
+
+    await clickJsonFoldOnLineContaining(responseBody.getByTestId('json-viewer'), '"nested"')
+    await expect(jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).resolves.toContain('secret')
   })
 
   test('shows file download for CSV', async ({ page }) => {
@@ -114,5 +147,48 @@ test.describe('response handling', () => {
     const op = operationLocator(page, 'get:/error')
     await expect(op.getByTestId('response-status')).toContainText('400')
     await expect(op.getByTestId('response-body')).toContainText('Bad Request')
+  })
+
+  test('renders foldable json viewer for error responses', async ({ page }) => {
+    await mockApi(page, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          title: 'Bad Request',
+          errors: [{ field: 'name', message: 'required' }],
+        }),
+      })
+    })
+
+    await expandOperation(page, 'get:/error')
+    await openTryItOut(page, 'get:/error')
+    await executeTryItOut(page, 'get:/error')
+
+    const viewer = responseJsonViewer(page, 'get:/error')
+    await expect(viewer).toBeVisible()
+    await expect(viewer.getByTestId('json-toggle-all-folds')).toBeVisible()
+    await expect(jsonEditorInnerText(viewer)).resolves.toContain('required')
+
+    await clickJsonFoldOnLineContaining(viewer, '"errors"')
+    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('required')).toBe(false)
+  })
+
+  test('shows response copy control for json bodies', async ({ page }) => {
+    await mockApi(page, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'hello' }),
+      })
+    })
+
+    await expandOperation(page, 'get:/json')
+    await openTryItOut(page, 'get:/json')
+    await executeTryItOut(page, 'get:/json')
+
+    const op = operationLocator(page, 'get:/json')
+    await expect(op.getByTestId('response-body').getByTestId('json-viewer')).toBeVisible()
+    await expect(op.getByTitle('Copy').first()).toBeVisible()
   })
 })
