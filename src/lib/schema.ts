@@ -99,9 +99,10 @@ export function schemaTypeLabel(
   if (resolved.type === 'array') {
     const items = resolved.items
     if (!items) return 'array'
-    if (isReference(items)) return `array[${refName(items.$ref)}]`
-    if ('type' in items && items.type) return `array[${items.type}]`
-    return 'array'
+    const itemLabel = isReference(items)
+      ? refName(items.$ref)
+      : schemaTypeLabel(spec, items)
+    return `${itemLabel}[]`
   }
 
   if (resolved.enum?.length) return `enum`

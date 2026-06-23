@@ -67,7 +67,13 @@ describe('schemaTypeLabel', () => {
         type: 'array',
         items: { $ref: '#/components/schemas/Owner' },
       }),
-    ).toBe('array[Owner]')
+    ).toBe('Owner[]')
+    expect(
+      schemaTypeLabel(compositionSpec, {
+        type: 'array',
+        items: { type: 'string' },
+      }),
+    ).toBe('string[]')
     expect(
       schemaTypeLabel(compositionSpec, {
         type: 'string',

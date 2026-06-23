@@ -525,32 +525,26 @@ export function OperationBlock(props: OperationBlockProps) {
 
             <div class="overflow-x-auto rounded-md bg-white/70 dark:bg-dm-surface">
               <table class="w-full border-collapse text-[13px]">
-                <thead>
-                  <tr class="text-left text-zinc-700 dark:text-dm-muted">
-                    <th class="w-[26%] px-2 py-1.5 text-xs font-semibold">Name</th>
-                    <th class="px-2 py-1.5 text-xs font-semibold">Description</th>
-                  </tr>
-                </thead>
                 <tbody>
                   <For each={paramDefs()}>
                     {(param) => (
-                      <tr class={`${dmBorderT} align-top`}>
-                        <td class="px-2 py-2 pr-3">
+                      <tr class={dmBorderT}>
+                        <td class="w-[26%] align-top px-2 py-2 pr-3">
                           <div class={dmParamName}>
                             {param.name}
                             {param.required ? (
                               <span class="text-rose-600 dark:text-rose-400"> *</span>
                             ) : null}
                           </div>
-                          <div class={`mt-0.5 text-[11px] leading-snug ${dmParamType}`}>
+                          <div class={`text-[11px] leading-snug ${dmParamType}`}>
                             <span class="font-mono">{param.schemaType}</span>
                             <Show when={param.enumValues?.length}>
                               <span> ({param.enumValues!.join(' | ')})</span>
                             </Show>
+                            <span class={`ml-1.5 ${dmMuted}`}>· {param.in}</span>
                           </div>
-                          <div class={`mt-px text-[10px] ${dmMuted}`}>{param.in}</div>
                         </td>
-                        <td class="px-2 py-2">
+                        <td class="align-bottom px-2 py-2">
                           <Show when={param.description}>
                             <p class={`mb-1 text-[11px] leading-tight ${dmMuted}`}>
                               {param.description}

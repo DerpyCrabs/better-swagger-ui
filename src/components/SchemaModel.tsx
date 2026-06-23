@@ -2,6 +2,9 @@ import { createMemo, createSignal, For, Show } from 'solid-js'
 import type { OpenAPIV3 } from 'openapi-types'
 import { schemaProperties, type SchemaProperty } from '../lib/schema'
 
+const schemaGridClass =
+  'grid grid-cols-[minmax(8rem,26%)_auto_1fr] gap-x-6'
+
 interface SchemaModelProps {
   spec: OpenAPIV3.Document
   properties: SchemaProperty[]
@@ -75,22 +78,31 @@ function PropertyRow(props: {
   return (
     <>
       <div
-        class={`grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 border-t py-1 text-[13px] ${
+        class={`${schemaGridClass} items-start border-t px-2 py-1 text-[13px] ${
           props.plain
             ? 'border-zinc-200 dark:border-dm-border'
             : 'border-zinc-300 dark:border-dm-border'
         }`}
       >
-        <span
-          class="font-semibold text-zinc-900 dark:text-dm-text"
-          style={{ 'padding-left': nameIndent() }}
-        >
-          {props.property.name}
-          {props.property.required ? (
-            <span class="text-rose-600 dark:text-rose-400"> *</span>
-          ) : null}
-        </span>
-        <span class="font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
+        <div style={{ 'padding-left': nameIndent() }}>
+          <div class="font-semibold text-zinc-900 dark:text-dm-text">
+            {props.property.name}
+            {props.property.required ? (
+              <span class="text-rose-600 dark:text-rose-400"> *</span>
+            ) : null}
+          </div>
+          <Show when={props.property.description}>
+            <p class="mt-0.5 text-[11px] leading-snug text-zinc-700 dark:text-dm-muted">
+              {props.property.description}
+            </p>
+          </Show>
+          <Show when={props.property.enum?.length}>
+            <p class="mt-0.5 text-[11px] leading-snug text-zinc-700 dark:text-dm-muted">
+              enum: {props.property.enum!.map(String).join(', ')}
+            </p>
+          </Show>
+        </div>
+        <span class="ml-[30px] whitespace-nowrap font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
           <Show
             when={canExpand()}
             fallback={props.property.type}
@@ -101,15 +113,6 @@ function PropertyRow(props: {
               expanded={expanded()}
               onToggle={() => setExpanded((value) => !value)}
             />
-          </Show>
-        </span>
-        <span class="text-zinc-700 dark:text-dm-muted">
-          <Show
-            when={props.property.enum?.length}
-            fallback={props.property.description ?? '—'}
-          >
-            {props.property.description ? `${props.property.description} · ` : ''}
-            enum: {props.property.enum!.map(String).join(', ')}
           </Show>
         </span>
       </div>
@@ -152,11 +155,6 @@ export function SchemaModel(props: SchemaModelProps) {
             : 'overflow-x-auto rounded border border-zinc-300 bg-white dark:border-dm-border dark:bg-dm-surface'
         }
       >
-        <div class="grid grid-cols-[minmax(8rem,26%)_minmax(6rem,18%)_1fr] gap-x-3 px-2 py-1 text-[11px] font-semibold text-zinc-700 dark:text-dm-muted">
-          <span>Name</span>
-          <span>Type</span>
-          <span>Description</span>
-        </div>
         <For each={props.properties}>
           {(property) => (
             <PropertyRow spec={props.spec} property={property} depth={depth()} plain={plain()} />
