@@ -1,5 +1,6 @@
 export { default as AlertCircle } from 'lucide-solid/icons/alert-circle'
 export { default as ArrowRight } from 'lucide-solid/icons/arrow-right'
+export { default as Braces } from 'lucide-solid/icons/braces'
 export { default as Check } from 'lucide-solid/icons/check'
 export { default as ChevronDown } from 'lucide-solid/icons/chevron-down'
 export { default as ChevronRight } from 'lucide-solid/icons/chevron-right'

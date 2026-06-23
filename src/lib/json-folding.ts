@@ -326,6 +326,14 @@ export function applyVisibleTextEdit(
   return [...result.slice(0, minLine), ...nextMiddle, ...result.slice(maxLine + 1)]
 }
 
+export function formatJsonText(text: string): string | null {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2)
+  } catch {
+    return null
+  }
+}
+
 export function jsonTextFromValue(data: unknown): { text: string; language: 'json' | 'plaintext' } {
   if (typeof data === 'string') {
     try {

@@ -9,6 +9,7 @@ import {
   foldDocRangeOnLine,
   foldIdsToExpandWithParent,
   isRootFoldRegion,
+  formatJsonText,
   jsonTextFromValue,
   rootFoldRegion,
   splitJsonLines,
@@ -177,6 +178,11 @@ describe('json-folding', () => {
 
     expect(edited.join('\n')).toContain('"count": 1')
     expect(edited.join('\n')).toContain('"added": true')
+  })
+
+  it('formats valid json text with indentation', () => {
+    expect(formatJsonText('{"a":1,"b":[2,3]}')).toBe('{\n  "a": 1,\n  "b": [\n    2,\n    3\n  ]\n}')
+    expect(formatJsonText('{ invalid')).toBeNull()
   })
 
   it('normalizes values into pretty json text', () => {

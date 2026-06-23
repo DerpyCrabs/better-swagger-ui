@@ -184,6 +184,49 @@ test.describe('request body json editor', () => {
     await expect(editor.getByTitle('Copy')).toBeVisible()
   })
 
+  test('formats compact json in the request body editor', async ({ page }) => {
+    await expandOperation(page, 'post:/items')
+    await openTryItOut(page, 'post:/items')
+
+    const editor = requestBodyJsonEditor(page, 'post:/items')
+    const textarea = editor.getByTestId('json-textarea')
+    const uglyBody = [
+      '{',
+      '"name":"Compact",',
+      '"tags":[',
+      '"a",',
+      '"b"',
+      '],',
+      '"meta":{',
+      '"count":1',
+      '}',
+      '}',
+    ].join('\n')
+
+    await textarea.evaluate((element, body) => {
+      element.value = body
+      element.dispatchEvent(new Event('input', { bubbles: true }))
+    }, uglyBody)
+
+    await expect(editor.getByTestId('json-format')).toBeEnabled()
+    await editor.getByTestId('json-format').click()
+
+    await expect(textarea).toHaveValue(
+      '{\n  "name": "Compact",\n  "tags": [\n    "a",\n    "b"\n  ],\n  "meta": {\n    "count": 1\n  }\n}',
+    )
+  })
+
+  test('disables format for invalid json', async ({ page }) => {
+    await expandOperation(page, 'post:/items')
+    await openTryItOut(page, 'post:/items')
+
+    const editor = requestBodyJsonEditor(page, 'post:/items')
+    const textarea = editor.getByTestId('json-textarea')
+
+    await textarea.fill('{ invalid')
+    await expect(editor.getByTestId('json-format')).toBeDisabled()
+  })
+
   test('collapses nested request body json', async ({ page }) => {
     await expandOperation(page, 'post:/items')
     await openTryItOut(page, 'post:/items')

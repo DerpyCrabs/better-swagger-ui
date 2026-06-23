@@ -3,12 +3,13 @@ import { createStore, reconcile } from 'solid-js/store'
 import { createVirtualizer } from '@tanstack/solid-virtual'
 import hljs from 'highlight.js/lib/core'
 import jsonLang from 'highlight.js/lib/languages/json'
-import { FoldVertical, UnfoldVertical } from '../icons'
+import { Braces, FoldVertical, UnfoldVertical } from '../icons'
 import { CopyButton } from './CopyButton'
 import {
   applyVisibleTextEdit,
   collapsibleFoldRegions,
   findFoldRegions,
+  formatJsonText,
   isRootFoldRegion,
   jsonTextFromValue,
   splitJsonLines,
@@ -130,10 +131,32 @@ function FoldControl(props: {
   )
 }
 
+function FormatJsonButton(props: { disabled: boolean; onFormat: () => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="json-format"
+      title="Format JSON"
+      aria-label="Format JSON"
+      disabled={props.disabled}
+      class={`${foldToolbarButtonClass()} bg-zinc-50 dark:bg-zinc-900/80`}
+      onClick={(event) => {
+        event.stopPropagation()
+        props.onFormat()
+      }}
+    >
+      <Braces size={14} />
+    </button>
+  )
+}
+
 function FloatingEditorActions(props: {
   showFold: boolean
   expanded: boolean
   onToggleFolds: () => void
+  showFormat: boolean
+  canFormat: boolean
+  onFormat: () => void
   copyText?: () => string
   copyTestId?: string
 }) {
@@ -142,6 +165,9 @@ function FloatingEditorActions(props: {
       <div class="pointer-events-auto flex gap-0.5 rounded border border-zinc-300/80 bg-white/95 p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/95">
         <Show when={props.showFold}>
           <FoldAllToggle expanded={props.expanded} onToggle={props.onToggleFolds} />
+        </Show>
+        <Show when={props.showFormat}>
+          <FormatJsonButton disabled={!props.canFormat} onFormat={props.onFormat} />
         </Show>
         <Show when={props.copyText}>
           <CopyButton text={props.copyText!} testId={props.copyTestId} label="Copy" />
@@ -265,6 +291,12 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
       return
     }
     setCollapsed(reconcile({}))
+  }
+
+  const handleFormat = () => {
+    if (!props.onChange) return
+    const formatted = formatJsonText(props.value)
+    if (formatted !== null) props.onChange(formatted)
   }
 
   const handleTextareaInput = (value: string) => {
@@ -515,8 +547,12 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
     </div>
   )
 
+  const showFormatToolbar = createMemo(
+    () => !(props.readOnly ?? false) && Boolean(props.onChange),
+  )
+
   const showFloatingActions = createMemo(
-    () => showFoldToolbar() || Boolean(props.copyText),
+    () => showFoldToolbar() || showFormatToolbar() || Boolean(props.copyText),
   )
 
   const containerStyle = () =>
@@ -535,6 +571,9 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
           showFold={showFoldToolbar()}
           expanded={allNestedExpanded()}
           onToggleFolds={toggleAllFolds}
+          showFormat={showFormatToolbar()}
+          canFormat={language() === 'json'}
+          onFormat={handleFormat}
           copyText={props.copyText}
           copyTestId={props.copyTestId}
         />
