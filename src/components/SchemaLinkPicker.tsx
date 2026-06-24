@@ -52,9 +52,48 @@ function optionClass(active: boolean) {
     : 'text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900/50'
 }
 
+function scrollElementInContainer(
+  container: HTMLElement,
+  element: HTMLElement,
+  align: 'nearest' | 'end',
+) {
+  const containerRect = container.getBoundingClientRect()
+  const elementRect = element.getBoundingClientRect()
+  const relativeTop = elementRect.top - containerRect.top + container.scrollTop
+  const elementBottom = relativeTop + elementRect.height
+  const maxScroll = container.scrollHeight - container.clientHeight
+
+  let scrollTop = container.scrollTop
+  if (align === 'end') {
+    scrollTop = elementBottom - container.clientHeight
+  } else {
+    const viewBottom = scrollTop + container.clientHeight
+    if (relativeTop < scrollTop) scrollTop = relativeTop
+    else if (elementBottom > viewBottom) scrollTop = elementBottom - container.clientHeight
+  }
+
+  container.scrollTop = Math.max(0, Math.min(scrollTop, maxScroll))
+}
+
+function scrollActiveLinkIntoView(container: HTMLElement) {
+  const active = container.querySelector<HTMLElement>('[data-schema-link-active="true"]')
+  if (!active) return
+
+  const options = Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))
+  const next = options[options.indexOf(active) + 1]
+
+  if (next) {
+    scrollElementInContainer(container, next, 'end')
+    return
+  }
+
+  scrollElementInContainer(container, active, 'nearest')
+}
+
 export function SchemaLinkPicker(props: SchemaLinkPickerProps) {
   let root: HTMLDivElement | undefined
   let list: HTMLDivElement | undefined
+  let searchInput: HTMLInputElement | undefined
   const [open, setOpen] = createSignal(false)
   const [filter, setFilter] = createSignal('')
 
@@ -77,9 +116,8 @@ export function SchemaLinkPicker(props: SchemaLinkPickerProps) {
     if (!open()) return
     match()?.link.id
     queueMicrotask(() => {
-      list?.querySelector<HTMLElement>('[data-schema-link-active="true"]')?.scrollIntoView({
-        block: 'nearest',
-      })
+      searchInput?.focus()
+      if (list) scrollActiveLinkIntoView(list)
     })
   })
 
@@ -138,6 +176,7 @@ export function SchemaLinkPicker(props: SchemaLinkPickerProps) {
               <div class="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/50">
                 <Search size={14} class="shrink-0 text-zinc-400" />
                 <input
+                  ref={searchInput}
                   class="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
                   data-testid="schema-links-filter"
                   value={filter()}

@@ -59,7 +59,13 @@ function newGroup(): SchemaLinkItem {
 
 function DeleteButton(props: { label: string; onClick: () => void }) {
   return (
-    <button type="button" class={deleteClass} aria-label={props.label} onClick={props.onClick}>
+    <button
+      type="button"
+      class={deleteClass}
+      title={props.label}
+      aria-label={props.label}
+      onClick={props.onClick}
+    >
       <Trash2 size={14} />
     </button>
   )
@@ -72,6 +78,7 @@ function HeaderActions(props: { onImport: () => void; onExport: () => void }) {
         type="button"
         class={iconActionClass}
         data-testid="schema-links-import-button"
+        title="Import"
         aria-label="Import"
         onClick={props.onImport}
       >
@@ -81,6 +88,7 @@ function HeaderActions(props: { onImport: () => void; onExport: () => void }) {
         type="button"
         class={iconActionClass}
         data-testid="schema-links-export"
+        title="Export"
         aria-label="Export"
         onClick={props.onExport}
       >
@@ -166,10 +174,10 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="schema-links-title"
-            class="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-zinc-950/5 dark:bg-zinc-950 dark:ring-white/10"
+            class="flex max-h-[80vh] min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-zinc-950/5 dark:bg-zinc-950 dark:ring-white/10"
             data-testid="schema-links-settings-dialog"
           >
-            <header class="flex items-center gap-2 border-b border-zinc-200/80 px-3 py-2.5 dark:border-zinc-800">
+            <header class="flex shrink-0 items-center gap-2 border-b border-zinc-200/80 px-3 py-2.5 dark:border-zinc-800">
               <h2 id="schema-links-title" class="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Schema links
               </h2>
@@ -180,6 +188,7 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
               <button
                 type="button"
                 class={iconActionClass}
+                title="Close"
                 aria-label="Close schema link settings"
                 onClick={props.onClose}
               >
@@ -390,17 +399,17 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
                   </Index>
                 </div>
               </Show>
+            </div>
 
-              <div class="flex items-center gap-2 border-t border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
-                <button type="button" class={footerActionClass} data-testid="schema-links-add-link" onClick={addLink}>
-                  <Plus size={14} />
-                  Link
-                </button>
-                <button type="button" class={footerActionClass} data-testid="schema-links-add-group" onClick={addGroup}>
-                  <Plus size={14} />
-                  Group
-                </button>
-              </div>
+            <div class="flex shrink-0 items-center gap-2 border-t border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
+              <button type="button" class={footerActionClass} data-testid="schema-links-add-link" onClick={addLink}>
+                <Plus size={14} />
+                Link
+              </button>
+              <button type="button" class={footerActionClass} data-testid="schema-links-add-group" onClick={addGroup}>
+                <Plus size={14} />
+                Group
+              </button>
             </div>
           </section>
         </div>
