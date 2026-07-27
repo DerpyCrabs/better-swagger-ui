@@ -17,7 +17,64 @@ export interface TokenResponse {
   token_type?: string
   expires_in?: number
   refresh_token?: string
+  refresh_expires_in?: number
   scope?: string
+}
+
+export interface RefreshTokenRequest {
+  tokenUrl: string
+  refreshToken: string
+  clientId: string
+  clientSecret: string
+  clientCredentialsLocation: ClientCredentialsLocation
+  scope?: string
+}
+
+type TokenResponsePayload = TokenResponse & {
+  error?: string
+  error_description?: string
+}
+
+function addClientCredentials(
+  body: URLSearchParams,
+  headers: Record<string, string>,
+  clientId: string,
+  clientSecret: string,
+  location: ClientCredentialsLocation,
+) {
+  body.set('client_id', clientId)
+  if (location === 'header') {
+    headers.Authorization = `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+  } else {
+    body.set('client_secret', clientSecret)
+  }
+}
+
+async function requestToken(
+  tokenUrl: string,
+  body: URLSearchParams,
+  headers: Record<string, string>,
+): Promise<TokenResponse> {
+  const response = await proxyFetch(tokenUrl, {
+    method: 'POST',
+    headers,
+    body: body.toString(),
+  })
+
+  const raw = await response.text()
+  let parsed: TokenResponsePayload
+
+  try {
+    parsed = JSON.parse(raw) as TokenResponsePayload
+  } catch {
+    throw new Error(`Token endpoint returned invalid JSON (${response.status})`)
+  }
+
+  if (!response.ok || !parsed.access_token) {
+    throw new Error(parsed.error_description ?? parsed.error ?? `Token request failed (${response.status})`)
+  }
+
+  return parsed
 }
 
 export async function fetchPasswordToken(
@@ -38,35 +95,14 @@ export async function fetchPasswordToken(
     Accept: 'application/json',
   }
 
-  if (request.clientCredentialsLocation === 'header') {
-    const credentials = btoa(`${request.clientId}:${request.clientSecret}`)
-    headers.Authorization = `Basic ${credentials}`
-    body.set('client_id', request.clientId)
-  } else {
-    body.set('client_id', request.clientId)
-    body.set('client_secret', request.clientSecret)
-  }
-
-  const response = await proxyFetch(request.tokenUrl, {
-    method: 'POST',
+  addClientCredentials(
+    body,
     headers,
-    body: body.toString(),
-  })
-
-  const raw = await response.text()
-  let parsed: TokenResponse & { error?: string; error_description?: string }
-
-  try {
-    parsed = JSON.parse(raw) as TokenResponse & { error?: string; error_description?: string }
-  } catch {
-    throw new Error(`Token endpoint returned invalid JSON (${response.status})`)
-  }
-
-  if (!response.ok || !parsed.access_token) {
-    throw new Error(parsed.error_description ?? parsed.error ?? `Token request failed (${response.status})`)
-  }
-
-  return parsed
+    request.clientId,
+    request.clientSecret,
+    request.clientCredentialsLocation,
+  )
+  return requestToken(request.tokenUrl, body, headers)
 }
 
 export async function fetchClientCredentialsToken(
@@ -84,26 +120,27 @@ export async function fetchClientCredentialsToken(
     Accept: 'application/json',
   }
 
-  if (clientCredentialsLocation === 'header') {
-    headers.Authorization = `Basic ${btoa(`${clientId}:${clientSecret}`)}`
-    body.set('client_id', clientId)
-  } else {
-    body.set('client_id', clientId)
-    body.set('client_secret', clientSecret)
-  }
+  addClientCredentials(body, headers, clientId, clientSecret, clientCredentialsLocation)
+  return requestToken(tokenUrl, body, headers)
+}
 
-  const response = await proxyFetch(tokenUrl, {
-    method: 'POST',
-    headers,
-    body: body.toString(),
+export async function fetchRefreshToken(request: RefreshTokenRequest): Promise<TokenResponse> {
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: request.refreshToken,
   })
+  if (request.scope) body.set('scope', request.scope)
 
-  const raw = await response.text()
-  const parsed = JSON.parse(raw) as TokenResponse & { error?: string; error_description?: string }
-
-  if (!response.ok || !parsed.access_token) {
-    throw new Error(parsed.error_description ?? parsed.error ?? `Token request failed (${response.status})`)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    Accept: 'application/json',
   }
-
-  return parsed
+  addClientCredentials(
+    body,
+    headers,
+    request.clientId,
+    request.clientSecret,
+    request.clientCredentialsLocation,
+  )
+  return requestToken(request.tokenUrl, body, headers)
 }

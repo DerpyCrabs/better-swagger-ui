@@ -238,7 +238,14 @@ export function OperationBlock(props: OperationBlockProps) {
       },
     )
 
-    const authRequest = auth.applyToRequest(url, headers)
+    let authRequest: Awaited<ReturnType<typeof auth.applyToRequest>>
+    try {
+      authRequest = await auth.applyToRequest(url, headers)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authorization refresh failed')
+      setLoading(false)
+      return
+    }
     url = authRequest.url
     headers = authRequest.headers
     for (const cookie of authRequest.cookies) {

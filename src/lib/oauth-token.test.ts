@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchClientCredentialsToken, fetchPasswordToken } from './oauth-token'
+import {
+  fetchClientCredentialsToken,
+  fetchPasswordToken,
+  fetchRefreshToken,
+} from './oauth-token'
 
 vi.mock('./proxy-fetch', () => ({
   proxyFetch: vi.fn(),
@@ -88,5 +92,34 @@ describe('oauth-token', () => {
     const [, init] = mockedFetch.mock.calls[0]!
     expect(init?.body).toContain('grant_type=client_credentials')
     expect(init?.body).toContain('scope=write')
+  })
+
+  it('refreshes an access token with Basic client credentials', async () => {
+    mockedFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          access_token: 'refreshed-access',
+          refresh_token: 'rotated-refresh',
+          expires_in: 300,
+        }),
+        { status: 200 },
+      ),
+    )
+
+    const result = await fetchRefreshToken({
+      tokenUrl: 'https://auth.example/token',
+      refreshToken: 'current-refresh',
+      clientId: 'cid',
+      clientSecret: 'csec',
+      clientCredentialsLocation: 'header',
+    })
+
+    expect(result.access_token).toBe('refreshed-access')
+    expect(result.refresh_token).toBe('rotated-refresh')
+    const [, init] = mockedFetch.mock.calls[0]!
+    const headers = init?.headers as Record<string, string>
+    expect(headers.Authorization).toMatch(/^Basic /)
+    expect(init?.body).toContain('grant_type=refresh_token')
+    expect(init?.body).toContain('refresh_token=current-refresh')
   })
 })

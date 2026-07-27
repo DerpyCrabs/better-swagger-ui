@@ -9,6 +9,12 @@ export interface StoredAuthEntry {
   apiKeyIn?: 'header' | 'query' | 'cookie'
   username?: string
   password?: string
+  refreshToken?: string
+  refreshExpiresAt?: number
+  oauthTokenUrl?: string
+  oauthClientId?: string
+  oauthClientSecret?: string
+  oauthClientCredentialsLocation?: 'body' | 'header'
 }
 
 function decodeJwtExpiry(accessToken: string): number | undefined {
@@ -34,7 +40,7 @@ export function resolveTokenExpiry(
   response: Pick<TokenResponse, 'expires_in'>,
   accessToken: string,
 ): number | undefined {
-  const fromResponse = response.expires_in
+  const fromResponse = response.expires_in !== undefined
     ? Date.now() + response.expires_in * 1000
     : undefined
   const fromJwt = decodeJwtExpiry(accessToken)
@@ -43,9 +49,52 @@ export function resolveTokenExpiry(
   return fromResponse ?? fromJwt
 }
 
+export function resolveRefreshTokenExpiry(
+  response: Pick<TokenResponse, 'refresh_expires_in'>,
+  refreshToken: string | undefined,
+): number | undefined {
+  if (!refreshToken) return undefined
+  return resolveTokenExpiry(
+    { expires_in: response.refresh_expires_in },
+    refreshToken,
+  )
+}
+
 export function isAuthEntryValid(entry: StoredAuthEntry, now = Date.now()): boolean {
   if (!entry.expiresAt) return true
   return entry.expiresAt > now
+}
+
+export function isAuthEntryRefreshable(entry: StoredAuthEntry, now = Date.now()): boolean {
+  if (
+    entry.type !== 'bearer' ||
+    !entry.refreshToken ||
+    !entry.oauthTokenUrl ||
+    !entry.oauthClientId ||
+    !entry.oauthClientCredentialsLocation
+  ) {
+    return false
+  }
+  return !entry.refreshExpiresAt || entry.refreshExpiresAt > now
+}
+
+export function shouldRefreshAuthEntry(
+  entry: StoredAuthEntry,
+  now = Date.now(),
+  refreshWindowMs = 30_000,
+): boolean {
+  return authRefreshDelay(entry, now, refreshWindowMs) === 0
+}
+
+export function authRefreshDelay(
+  entry: StoredAuthEntry,
+  now = Date.now(),
+  refreshWindowMs = 30_000,
+): number | null {
+  if (!isAuthEntryRefreshable(entry, now) || entry.expiresAt === undefined) {
+    return null
+  }
+  return Math.max(0, entry.expiresAt - now - refreshWindowMs)
 }
 
 export function storageKey(sourceUrl: string) {
@@ -61,7 +110,9 @@ export function loadStoredEntries(sourceUrl: string): Map<string, StoredAuthEntr
 
     const parsed = JSON.parse(raw) as StoredAuthEntry[]
     const now = Date.now()
-    const valid = parsed.filter((entry) => isAuthEntryValid(entry, now))
+    const valid = parsed.filter(
+      (entry) => isAuthEntryValid(entry, now) || isAuthEntryRefreshable(entry, now),
+    )
     const result = new Map(valid.map((entry) => [entry.schemeId, entry]))
 
     if (valid.length !== parsed.length || sessionStorage.getItem(key)) {
@@ -85,7 +136,7 @@ export function purgeExpiredEntries(
 ): Map<string, StoredAuthEntry> {
   const next = new Map<string, StoredAuthEntry>()
   for (const [schemeId, entry] of entries) {
-    if (isAuthEntryValid(entry, now)) {
+    if (isAuthEntryValid(entry, now) || isAuthEntryRefreshable(entry, now)) {
       next.set(schemeId, entry)
     }
   }

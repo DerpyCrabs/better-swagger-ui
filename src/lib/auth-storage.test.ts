@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  authRefreshDelay,
   isAuthEntryValid,
+  isAuthEntryRefreshable,
   purgeExpiredEntries,
+  resolveRefreshTokenExpiry,
   resolveTokenExpiry,
+  shouldRefreshAuthEntry,
   storageKey,
   type StoredAuthEntry,
 } from './auth-storage'
@@ -39,6 +43,18 @@ describe('resolveTokenExpiry', () => {
   })
 })
 
+describe('resolveRefreshTokenExpiry', () => {
+  it('uses refresh_expires_in', () => {
+    const before = Date.now()
+    const expiry = resolveRefreshTokenExpiry(
+      { refresh_expires_in: 1800 },
+      'refresh-token',
+    )
+    expect(expiry).toBeDefined()
+    expect(expiry!).toBeGreaterThanOrEqual(before + 1800 * 1000 - 10)
+  })
+})
+
 describe('isAuthEntryValid', () => {
   it('treats missing expiry as valid', () => {
     const entry: StoredAuthEntry = {
@@ -57,6 +73,58 @@ describe('isAuthEntryValid', () => {
       expiresAt: Date.now() - 1000,
     }
     expect(isAuthEntryValid(entry)).toBe(false)
+  })
+})
+
+describe('refreshable auth entries', () => {
+  const refreshable: StoredAuthEntry = {
+    schemeId: 'oauth',
+    type: 'bearer',
+    token: 'expired-access',
+    expiresAt: Date.now() - 1000,
+    refreshToken: 'refresh',
+    refreshExpiresAt: Date.now() + 60_000,
+    oauthTokenUrl: 'https://auth.example/token',
+    oauthClientId: 'client',
+    oauthClientCredentialsLocation: 'header',
+  }
+
+  it('keeps expired access tokens when refresh remains valid', () => {
+    expect(isAuthEntryRefreshable(refreshable)).toBe(true)
+    expect(purgeExpiredEntries(new Map([['oauth', refreshable]])).has('oauth')).toBe(true)
+  })
+
+  it('refreshes access tokens inside the refresh window', () => {
+    expect(shouldRefreshAuthEntry(refreshable)).toBe(true)
+    expect(
+      shouldRefreshAuthEntry({
+        ...refreshable,
+        expiresAt: Date.now() + 60_000,
+      }),
+    ).toBe(false)
+  })
+
+  it('calculates background refresh delay', () => {
+    const now = Date.now()
+    expect(
+      authRefreshDelay(
+        {
+          ...refreshable,
+          expiresAt: now + 90_000,
+        },
+        now,
+      ),
+    ).toBe(60_000)
+    expect(authRefreshDelay(refreshable, now)).toBe(0)
+  })
+
+  it('rejects expired refresh tokens', () => {
+    expect(
+      isAuthEntryRefreshable({
+        ...refreshable,
+        refreshExpiresAt: Date.now() - 1000,
+      }),
+    ).toBe(false)
   })
 })
 

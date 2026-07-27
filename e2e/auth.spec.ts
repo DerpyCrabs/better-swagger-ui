@@ -101,6 +101,115 @@ test.describe('authorization', () => {
     expect(headers.authorization).toBe('Bearer oauth-access')
   })
 
+  test('refreshes an expiring OAuth token before execute', async ({ page }) => {
+    const tokenBodies: string[] = []
+    await page.route('**/fixtures/mock-api/oauth/token', async (route) => {
+      const body = route.request().postData() ?? ''
+      tokenBodies.push(body)
+      const refreshing = body.includes('grant_type=refresh_token')
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          refreshing
+            ? {
+                access_token: 'refreshed-access',
+                refresh_token: 'refresh-two',
+                expires_in: 3600,
+                refresh_expires_in: 1800,
+              }
+            : {
+                access_token: 'expiring-access',
+                refresh_token: 'refresh-one',
+                expires_in: 20,
+                refresh_expires_in: 1800,
+              },
+        ),
+      })
+    })
+
+    let authorization = ''
+    await page.route('**/fixtures/mock-api/secure', async (route) => {
+      authorization = route.request().headers().authorization ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await page.getByTestId('authorize-button').click()
+    await page.locator('input[name="username"]').fill('user')
+    await page.locator('input[name="password"]').fill('pass')
+    await page.locator('input[name="client_id"]').fill('test-client')
+    await page.getByTestId('OAuthPassword-authorize').click()
+
+    await expandOperation(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
+
+    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
+      '200',
+    )
+    expect(tokenBodies).toHaveLength(2)
+    expect(tokenBodies[1]).toContain('grant_type=refresh_token')
+    expect(tokenBodies[1]).toContain('refresh_token=refresh-one')
+    expect(authorization).toBe('Bearer refreshed-access')
+  })
+
+  test('refreshes OAuth token in background while idle', async ({ page }) => {
+    const tokenBodies: string[] = []
+    await page.route('**/fixtures/mock-api/oauth/token', async (route) => {
+      const body = route.request().postData() ?? ''
+      tokenBodies.push(body)
+      const refreshing = body.includes('grant_type=refresh_token')
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          refreshing
+            ? {
+                access_token: 'background-refreshed-access',
+                refresh_token: 'background-refresh-two',
+                expires_in: 3600,
+                refresh_expires_in: 1800,
+              }
+            : {
+                access_token: 'background-expiring-access',
+                refresh_token: 'background-refresh-one',
+                expires_in: 31,
+                refresh_expires_in: 1800,
+              },
+        ),
+      })
+    })
+
+    let authorization = ''
+    await page.route('**/fixtures/mock-api/secure', async (route) => {
+      authorization = route.request().headers().authorization ?? ''
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await page.getByTestId('authorize-button').click()
+    await page.locator('input[name="username"]').fill('user')
+    await page.locator('input[name="password"]').fill('pass')
+    await page.locator('input[name="client_id"]').fill('test-client')
+    await page.getByTestId('OAuthPassword-authorize').click()
+
+    await expect.poll(() => tokenBodies.length).toBe(2)
+    expect(tokenBodies[1]).toContain('grant_type=refresh_token')
+
+    await expandOperation(page, 'get:/secure')
+    await executeOperation(page, 'get:/secure')
+    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
+      '200',
+    )
+    expect(authorization).toBe('Bearer background-refreshed-access')
+  })
+
   test('sends HTTP Basic credentials after authorize', async ({ page }) => {
     let headers: Record<string, string> = {}
 
