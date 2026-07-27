@@ -1,7 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
 import type { OpenAPIV3 } from 'openapi-types'
-import { ChevronDown, ChevronUp, Download, LoaderCircle, Lock, Play } from '../icons'
+import { ChevronDown, ChevronRight, ChevronUp, Download, LoaderCircle, Lock, Play } from '../icons'
 import type { OperationItem } from '../lib/operations'
 import { methodColor, methodExpandedBg, methodHeaderBg } from '../lib/operations'
 import {
@@ -38,6 +38,7 @@ import {
 import { parseResponseBody, resolveDownloadName } from '../lib/response-body'
 import { buildAcceptHeader } from '../lib/accept-header'
 import { buildRequestHeaders, buildUrl } from '../lib/build-request-url'
+import { buildCurlCommand } from '../lib/curl-request'
 import { proxyFetch } from '../lib/proxy-fetch'
 import {
   dmBorder,
@@ -72,6 +73,7 @@ interface ExecuteResult {
   fileName: string | null
   contentDisposition: string | null
   requestUrl: string
+  curlCommand: string
 }
 
 export function OperationBlock(props: OperationBlockProps) {
@@ -255,6 +257,13 @@ export function OperationBlock(props: OperationBlockProps) {
       }
     }
 
+    const curlCommand = buildCurlCommand({
+      method: init.method ?? 'GET',
+      url,
+      headers,
+      body: init.body ?? undefined,
+    })
+
     try {
       const response = await proxyFetch(url, init)
       const parsed = await parseResponseBody(response, url)
@@ -271,6 +280,7 @@ export function OperationBlock(props: OperationBlockProps) {
         fileName: parsed.fileName,
         contentDisposition: parsed.contentDisposition,
         requestUrl: url,
+        curlCommand,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
@@ -619,6 +629,24 @@ export function OperationBlock(props: OperationBlockProps) {
           <Show when={result()}>
             {(res) => (
               <div class={`mt-2 space-y-1.5 ${dmSchemaPanel}`}>
+                <details
+                  data-testid="curl-request"
+                  class="group rounded border border-zinc-300 bg-white/70 dark:border-dm-border dark:bg-dm-surface"
+                >
+                  <summary class="flex cursor-pointer list-none items-center gap-1.5 px-2 py-1 text-xs font-semibold text-zinc-800 dark:text-dm-text">
+                    <ChevronRight
+                      size={12}
+                      class="transition-transform group-open:rotate-90"
+                    />
+                    Curl
+                  </summary>
+                  <div class="border-t border-zinc-200 p-1 dark:border-dm-border">
+                    <pre
+                      data-testid="curl-command"
+                      class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-zinc-950 px-2 py-1.5 font-mono text-[11px] leading-snug text-zinc-100"
+                    ><code>{res().curlCommand}</code></pre>
+                  </div>
+                </details>
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class={dmSectionHeading}>
                     Response

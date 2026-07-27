@@ -61,6 +61,31 @@ test.describe('execute request', () => {
     expect(capturedHeaders.accept).toContain('application/json')
   })
 
+  test('shows executed request as curl in a collapsed spoiler', async ({ page }) => {
+    await mockApi(page, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+
+    await expandOperation(page, 'get:/users/{id}')
+    const op = operationLocator(page, 'get:/users/{id}')
+    await op.getByPlaceholder('req-123').fill('req-abc')
+    await executeOperation(page, 'get:/users/{id}')
+
+    const curl = op.getByTestId('curl-request')
+    await expect(curl).not.toHaveAttribute('open', '')
+    await expect(op.getByTestId('curl-command')).not.toBeVisible()
+
+    await curl.getByText('Curl', { exact: true }).click()
+    await expect(op.getByTestId('curl-command')).toBeVisible()
+    await expect(op.getByTestId('curl-command')).toContainText("curl")
+    await expect(op.getByTestId('curl-command')).toContainText("'GET'")
+    await expect(op.getByTestId('curl-command')).toContainText("'X-Request-Id: req-abc'")
+  })
+
   test('rejects invalid JSON body before fetch', async ({ page }) => {
     await loadSpec(page, specUrl('request-body.json'))
     await expandOperation(page, 'post:/items')
