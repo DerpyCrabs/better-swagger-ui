@@ -691,7 +691,13 @@ export function OperationBlock(props: OperationBlockProps) {
                 <div data-testid="response-body">
                 <Show
                   when={res().isFile}
-                  fallback={<VirtualJsonViewer data={res().body} maxHeight="32rem" />}
+                  fallback={
+                    <VirtualJsonViewer
+                      data={res().body}
+                      maxHeight="32rem"
+                      searchable={Boolean(res().copyText)}
+                    />
+                  }
                 >
                   <div class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-dm-surface">
                     <p class="text-zinc-700 dark:text-dm-text">

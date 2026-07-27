@@ -142,6 +142,22 @@ test.describe('response handling', () => {
     await expect(op.getByTestId('response-body')).toContainText('Bad Request')
   })
 
+  test('hides search when response body is empty', async ({ page }) => {
+    await mockApi(page, async (route) => {
+      await route.fulfill({
+        status: 401,
+        body: '',
+      })
+    })
+
+    await expandOperation(page, 'get:/error')
+    await executeOperation(page, 'get:/error')
+
+    const op = operationLocator(page, 'get:/error')
+    await expect(op.getByTestId('response-status')).toContainText('401')
+    await expect(op.getByTestId('response-body').getByTestId('json-search-toggle')).toHaveCount(0)
+  })
+
   test('renders foldable json viewer for error responses', async ({ page }) => {
     await mockApi(page, async (route) => {
       await route.fulfill({
