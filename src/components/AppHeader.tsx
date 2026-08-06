@@ -92,7 +92,7 @@ export function AppHeader(props: AppHeaderProps) {
   }
 
   return (
-    <header class="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-dm-border dark:bg-dm-base/95">
+    <header class="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50/90 backdrop-blur dark:border-dm-border dark:bg-dm-base/95">
       <div class="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
         <span class="hidden shrink-0 text-sm font-semibold text-zinc-900 dark:text-dm-text sm:inline">
           Better Swagger UI
