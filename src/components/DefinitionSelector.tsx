@@ -17,7 +17,7 @@ export function DefinitionSelector(props: DefinitionSelectorProps) {
           aria-label="Select a definition"
           title="Select a definition"
           onChange={(event) => props.onChange(event.currentTarget.value)}
-          class="min-w-[11.5rem] max-w-[14rem] appearance-none rounded-md border border-emerald-600 bg-white py-1.5 pr-8 pl-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-600 dark:bg-zinc-900 dark:text-zinc-100"
+          class="min-w-[11.5rem] max-w-[14rem] appearance-none rounded-md border border-zinc-300 bg-white py-1.5 pr-8 pl-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-sky-500/40 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:focus:border-sky-500 dark:focus:ring-sky-500/40"
         >
           <For each={props.definitions}>
             {(definition) => (
