@@ -96,25 +96,27 @@ function PropertyRow(props: {
               {props.property.description}
             </p>
           </Show>
+        </div>
+        <div class="ml-[30px] font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
+          <div class="whitespace-nowrap">
+            <Show
+              when={canExpand()}
+              fallback={props.property.type}
+            >
+              <TypeLabel
+                type={props.property.type}
+                expandableName={props.property.expandableName}
+                expanded={expanded()}
+                onToggle={() => setExpanded((value) => !value)}
+              />
+            </Show>
+          </div>
           <Show when={props.property.enum?.length}>
-            <p class="mt-0.5 text-[11px] leading-snug text-zinc-700 dark:text-dm-muted">
-              enum: {props.property.enum!.map(String).join(', ')}
+            <p class="mt-0.5 max-w-md text-[11px] font-normal leading-snug break-words text-zinc-700 dark:text-dm-muted">
+              {props.property.enum!.map(String).join(', ')}
             </p>
           </Show>
         </div>
-        <span class="ml-[30px] whitespace-nowrap font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
-          <Show
-            when={canExpand()}
-            fallback={props.property.type}
-          >
-            <TypeLabel
-              type={props.property.type}
-              expandableName={props.property.expandableName}
-              expanded={expanded()}
-              onToggle={() => setExpanded((value) => !value)}
-            />
-          </Show>
-        </span>
       </div>
       <Show when={expanded()}>
         <Show
