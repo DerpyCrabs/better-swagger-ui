@@ -69,7 +69,10 @@ export function specUrl(path: string) {
 export async function clearAuthStorage(page: Page) {
   await page.addInitScript(() => {
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('better-swagger-auth:')) {
+      if (
+        key.startsWith('better-swagger-auth:') ||
+        key.startsWith('better-swagger-oauth:')
+      ) {
         localStorage.removeItem(key)
       }
     }

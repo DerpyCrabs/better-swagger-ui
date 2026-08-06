@@ -663,8 +663,8 @@ export function AuthorizeDialog(props: AuthorizeDialogProps) {
 export function AuthorizeButton(props: { compact?: boolean }) {
   const auth = useAuth()
   const [open, setOpen] = createSignal(false)
-  const authorizedCount = () => auth.entries().size
-  const label = () => (authorizedCount() > 0 ? 'Authorized' : 'Authorize')
+  const authorized = () => auth.entries().size > 0
+  const label = () => (authorized() ? 'Authorized' : 'Authorize')
 
   return (
     <Show when={auth.hasAnyScheme()}>
@@ -673,21 +673,16 @@ export function AuthorizeButton(props: { compact?: boolean }) {
         data-testid="authorize-button"
         onClick={() => setOpen(true)}
         title={label()}
-        class={`inline-flex shrink-0 items-center rounded-md border font-medium transition ${
-          props.compact ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 rounded-lg px-3 py-2 text-sm'
+        aria-label={label()}
+        class={`inline-flex shrink-0 items-center justify-center rounded-md border bg-white transition hover:bg-zinc-50 dark:bg-dm-input dark:hover:bg-zinc-800 ${
+          props.compact ? 'p-1.5' : 'rounded-lg p-2'
         } ${
-          authorizedCount() > 0
-            ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
-            : 'border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200'
+          authorized()
+            ? 'border-emerald-600 text-emerald-700 dark:border-emerald-500 dark:text-emerald-400'
+            : 'border-zinc-300 text-zinc-800 dark:border-dm-border dark:text-dm-text'
         }`}
       >
-        <Lock size={props.compact ? 14 : 16} />
-        <span class={props.compact ? 'hidden md:inline' : ''}>{label()}</span>
-        <Show when={authorizedCount() > 0}>
-          <span class="rounded-full bg-emerald-600/15 px-1 text-[10px] leading-none md:text-xs">
-            {authorizedCount()}
-          </span>
-        </Show>
+        <Lock size={props.compact ? 16 : 18} />
       </button>
       <AuthorizeDialog open={open()} onClose={() => setOpen(false)} />
     </Show>

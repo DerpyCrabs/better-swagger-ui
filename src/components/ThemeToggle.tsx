@@ -9,7 +9,7 @@ export function ThemeToggle(props: { compact?: boolean }) {
       type="button"
       onClick={toggleTheme}
       aria-label={theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-      class={`inline-flex shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-zinc-100 text-zinc-700 transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 ${
+      class={`inline-flex shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-800 transition hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-input dark:text-dm-text dark:hover:bg-zinc-800 ${
         props.compact ? 'p-1.5' : 'rounded-lg p-2'
       }`}
     >

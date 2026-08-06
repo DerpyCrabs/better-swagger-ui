@@ -14,14 +14,19 @@ import {
 } from './auth-config'
 import {
   authRefreshDelay,
+  clearOAuthAcrossSources,
+  entryMatchesOAuthReuse,
+  entryOAuthFingerprint,
   isAuthEntryValid,
   isAuthEntryRefreshable,
-  loadStoredEntries,
+  loadStoredEntriesForSchemes,
   persistEntries,
+  publishOAuthEntry,
   purgeExpiredEntries,
   resolveRefreshTokenExpiry,
   resolveTokenExpiry,
   shouldRefreshAuthEntry,
+  type OAuthFlowKind,
   type StoredAuthEntry,
 } from './auth-storage'
 import {
@@ -76,6 +81,7 @@ interface OAuthEntryInput {
   clientId: string
   clientSecret: string
   clientCredentialsLocation: ClientCredentialsLocation
+  flowKind: OAuthFlowKind
 }
 
 function oauthEntry(input: OAuthEntryInput): StoredAuthEntry {
@@ -84,6 +90,11 @@ function oauthEntry(input: OAuthEntryInput): StoredAuthEntry {
     type: 'bearer',
     token: input.token.access_token,
     expiresAt: resolveTokenExpiry(input.token, input.token.access_token),
+    oauthTokenUrl: input.tokenUrl,
+    oauthClientId: input.clientId,
+    oauthClientSecret: input.clientSecret,
+    oauthClientCredentialsLocation: input.clientCredentialsLocation,
+    oauthFlowKind: input.flowKind,
   }
 
   if (input.token.refresh_token) {
@@ -92,13 +103,24 @@ function oauthEntry(input: OAuthEntryInput): StoredAuthEntry {
       input.token,
       input.token.refresh_token,
     )
-    entry.oauthTokenUrl = input.tokenUrl
-    entry.oauthClientId = input.clientId
-    entry.oauthClientSecret = input.clientSecret
-    entry.oauthClientCredentialsLocation = input.clientCredentialsLocation
   }
 
   return entry
+}
+
+function clearReusableOAuth(entry: StoredAuthEntry | undefined) {
+  if (
+    !entry?.oauthFlowKind ||
+    !entry.oauthTokenUrl ||
+    !entry.oauthClientId
+  ) {
+    return
+  }
+  clearOAuthAcrossSources(
+    entry.oauthFlowKind,
+    entry.oauthTokenUrl,
+    entry.oauthClientId,
+  )
 }
 
 export function AuthProvider(
@@ -112,8 +134,9 @@ export function AuthProvider(
     const loaded = props.loaded()
     if (!loaded) return
 
-    setSchemes(parseSecuritySchemes(loaded.spec, loaded.oauthInit))
-    setEntries(loadStoredEntries(loaded.sourceUrl))
+    const nextSchemes = parseSecuritySchemes(loaded.spec, loaded.oauthInit)
+    setSchemes(nextSchemes)
+    setEntries(loadStoredEntriesForSchemes(loaded.sourceUrl, nextSchemes))
   })
 
   const updateEntries = (updater: (current: Map<string, AuthEntry>) => Map<string, AuthEntry>) => {
@@ -126,10 +149,22 @@ export function AuthProvider(
     })
   }
 
+  const persistOAuthEntry = (entry: AuthEntry) => {
+    updateEntries((current) => {
+      const next = new Map(current)
+      next.set(entry.schemeId, entry)
+      return next
+    })
+    publishOAuthEntry(entry, {
+      excludeSourceUrl: props.loaded()?.sourceUrl,
+    })
+  }
+
   const validEntries = () => purgeExpiredEntries(entries())
 
   const refreshEntry = (entry: AuthEntry): Promise<void> => {
-    const pending = pendingRefreshes.get(entry.schemeId)
+    const refreshKey = entryOAuthFingerprint(entry) ?? entry.schemeId
+    const pending = pendingRefreshes.get(refreshKey)
     if (pending) return pending
 
     const task = (async () => {
@@ -142,40 +177,78 @@ export function AuthProvider(
           clientCredentialsLocation: entry.oauthClientCredentialsLocation!,
         })
 
-        updateEntries((current) => {
-          const latest = current.get(entry.schemeId)
-          if (!latest || latest.refreshToken !== entry.refreshToken) return current
+        const nextRefreshToken = token.refresh_token ?? entry.refreshToken
+        const refreshed: AuthEntry = {
+          ...entry,
+          token: token.access_token,
+          expiresAt: resolveTokenExpiry(token, token.access_token),
+          refreshToken: nextRefreshToken,
+          refreshExpiresAt: token.refresh_token
+            ? resolveRefreshTokenExpiry(token, token.refresh_token) ??
+              entry.refreshExpiresAt
+            : entry.refreshExpiresAt,
+        }
 
-          const nextRefreshToken = token.refresh_token ?? latest.refreshToken
+        // Write shared fingerprint store first so a mid-refresh service switch
+        // still picks up the new access/refresh tokens on load.
+        publishOAuthEntry(refreshed)
+
+        updateEntries((current) => {
+          let changed = false
           const next = new Map(current)
-          next.set(entry.schemeId, {
-            ...latest,
-            token: token.access_token,
-            expiresAt: resolveTokenExpiry(token, token.access_token),
-            refreshToken: nextRefreshToken,
-            refreshExpiresAt: token.refresh_token
-              ? resolveRefreshTokenExpiry(token, token.refresh_token) ??
-                latest.refreshExpiresAt
-              : latest.refreshExpiresAt,
-          })
-          return next
+          for (const [schemeId, latest] of current) {
+            if (latest.refreshToken !== entry.refreshToken) continue
+            if (
+              entry.oauthFlowKind &&
+              entry.oauthTokenUrl &&
+              entry.oauthClientId &&
+              !entryMatchesOAuthReuse(
+                latest,
+                entry.oauthFlowKind,
+                entry.oauthTokenUrl,
+                entry.oauthClientId,
+              )
+            ) {
+              continue
+            }
+            next.set(schemeId, { ...refreshed, schemeId })
+            changed = true
+          }
+          return changed ? next : current
         })
       } catch (error) {
+        clearReusableOAuth(entry)
         updateEntries((current) => {
-          const latest = current.get(entry.schemeId)
-          if (!latest || latest.refreshToken !== entry.refreshToken) return current
+          let changed = false
           const next = new Map(current)
-          next.delete(entry.schemeId)
-          return next
+          for (const [schemeId, latest] of current) {
+            if (latest.refreshToken !== entry.refreshToken) continue
+            if (
+              entry.oauthFlowKind &&
+              entry.oauthTokenUrl &&
+              entry.oauthClientId &&
+              !entryMatchesOAuthReuse(
+                latest,
+                entry.oauthFlowKind,
+                entry.oauthTokenUrl,
+                entry.oauthClientId,
+              )
+            ) {
+              continue
+            }
+            next.delete(schemeId)
+            changed = true
+          }
+          return changed ? next : current
         })
         const message = error instanceof Error ? error.message : 'Unknown error'
         throw new Error(`Authorization refresh failed: ${message}`)
       } finally {
-        pendingRefreshes.delete(entry.schemeId)
+        pendingRefreshes.delete(refreshKey)
       }
     })()
 
-    pendingRefreshes.set(entry.schemeId, task)
+    pendingRefreshes.set(refreshKey, task)
     return task
   }
 
@@ -240,18 +313,15 @@ export function AuthProvider(
         clientCredentialsLocation: input.clientCredentialsLocation,
       })
 
-      updateEntries((current) => {
-        const next = new Map(current)
-        next.set(input.schemeId, oauthEntry({
-          schemeId: input.schemeId,
-          token,
-          tokenUrl: scheme.tokenUrl,
-          clientId: input.clientId,
-          clientSecret: input.clientSecret,
-          clientCredentialsLocation: input.clientCredentialsLocation,
-        }))
-        return next
-      })
+      persistOAuthEntry(oauthEntry({
+        schemeId: input.schemeId,
+        token,
+        tokenUrl: scheme.tokenUrl,
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
+        clientCredentialsLocation: input.clientCredentialsLocation,
+        flowKind: 'oauth2-password',
+      }))
     },
     authorizeOAuthClientCredentials: async (input) => {
       const scheme = schemes().find((item) => item.id === input.schemeId)
@@ -266,18 +336,15 @@ export function AuthProvider(
         input.clientCredentialsLocation,
       )
 
-      updateEntries((current) => {
-        const next = new Map(current)
-        next.set(input.schemeId, oauthEntry({
-          schemeId: input.schemeId,
-          token,
-          tokenUrl: scheme.tokenUrl,
-          clientId: input.clientId,
-          clientSecret: input.clientSecret,
-          clientCredentialsLocation: input.clientCredentialsLocation,
-        }))
-        return next
-      })
+      persistOAuthEntry(oauthEntry({
+        schemeId: input.schemeId,
+        token,
+        tokenUrl: scheme.tokenUrl,
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
+        clientCredentialsLocation: input.clientCredentialsLocation,
+        flowKind: 'oauth2-client-credentials',
+      }))
     },
     authorizeApiKey: (schemeId, token) => {
       const scheme = schemes().find((item) => item.id === schemeId)
@@ -324,6 +391,8 @@ export function AuthProvider(
       })
     },
     logout: (schemeId) => {
+      const existing = entries().get(schemeId)
+      clearReusableOAuth(existing)
       updateEntries((current) => {
         const next = new Map(current)
         next.delete(schemeId)
@@ -331,6 +400,9 @@ export function AuthProvider(
       })
     },
     logoutAll: () => {
+      for (const entry of entries().values()) {
+        clearReusableOAuth(entry)
+      }
       updateEntries(() => new Map())
     },
   }

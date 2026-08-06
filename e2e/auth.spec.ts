@@ -90,7 +90,7 @@ test.describe('authorization', () => {
     await page.locator('input[name="password"]').fill('pass')
     await page.locator('input[name="client_id"]').fill('test-client')
     await page.getByTestId('OAuthPassword-authorize').click()
-    await expect(page.getByTestId('authorize-button')).toContainText('Authorized')
+    await expect(page.getByTestId('authorize-button')).toHaveAttribute('aria-label', 'Authorized')
 
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
@@ -301,12 +301,12 @@ test.describe('authorization', () => {
     await page.getByTestId('authorize-button').click()
     await page.getByPlaceholder('Bearer token').fill('token')
     await page.getByTestId('BearerAuth-authorize').click()
-    await expect(page.getByTestId('authorize-button')).toContainText('Authorized')
+    await expect(page.getByTestId('authorize-button')).toHaveAttribute('aria-label', 'Authorized')
 
     await page.getByTestId('authorize-button').click()
     await expect(page.getByTestId('authorize-dialog')).toBeVisible()
     await page.getByRole('button', { name: 'Logout' }).first().click()
     await page.getByTestId('authorize-dialog').getByText('Close', { exact: true }).click()
-    await expect(page.getByTestId('authorize-button')).toContainText('Authorize')
+    await expect(page.getByTestId('authorize-button')).toHaveAttribute('aria-label', 'Authorize')
   })
 })
