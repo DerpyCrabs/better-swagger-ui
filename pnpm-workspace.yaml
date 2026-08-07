@@ -1,5 +1,3 @@
-minimumReleaseAgeExclude:
-  - lucide-solid@1.30.0
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@0.2.8
   vitest: 4.1.10

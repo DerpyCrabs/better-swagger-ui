@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.20.0",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "vp dev",
     "dev:proxy": "vp dev --mode proxy",
@@ -45,7 +45,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.20.0",
+      "version": "10.34.5",
       "onFail": "download"
     }
   }
