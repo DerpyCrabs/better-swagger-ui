@@ -136,7 +136,12 @@ export function normalizeSchemaLinkCatalog(input: unknown): SchemaLinkCatalog {
 
     const item = rawItem as ImportItem
     const path = `Item "${typeof item.name === 'string' ? item.name : index + 1}"`
-    const type = item.type === 'group' ? 'group' : item.type === 'link' || item.links === undefined ? 'link' : 'group'
+    const type =
+      item.type === 'group'
+        ? 'group'
+        : item.type === 'link' || item.links === undefined
+          ? 'link'
+          : 'group'
 
     if (type === 'link') {
       const link = normalizeLink(item, path, usedIds)

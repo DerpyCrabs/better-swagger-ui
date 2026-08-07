@@ -16,6 +16,9 @@ dist-ssr
 test-results
 coverage
 
+# Local scratch scripts
+tmp-*.ts
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import requestBodyMedia from '../../tests/fixtures/openapi/request-body-media.json'
 import {
@@ -37,10 +37,18 @@ describe('primaryRequestBodyMedia', () => {
 
 describe('getRequestBodyMode', () => {
   it('detects json, text, file, multipart, and urlencoded modes', () => {
-    const mixed = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/mixed')!.requestBody)!)
-    const notes = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/notes')!.requestBody)!)
-    const binary = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/binary')!.requestBody)!)
-    const upload = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/upload')!.requestBody)!)
+    const mixed = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/mixed')!.requestBody)!,
+    )
+    const notes = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/notes')!.requestBody)!,
+    )
+    const binary = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/binary')!.requestBody)!,
+    )
+    const upload = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/upload')!.requestBody)!,
+    )
     const form = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/form')!.requestBody)!)
 
     expect(getRequestBodyMode(mixed)).toBe('json')
@@ -53,14 +61,18 @@ describe('getRequestBodyMode', () => {
 
 describe('defaultRequestBodyText', () => {
   it('uses string example for text/plain', () => {
-    const media = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/notes')!.requestBody)!)
+    const media = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/notes')!.requestBody)!,
+    )
     expect(defaultRequestBodyText(media, 'text')).toBe('Hello world')
   })
 })
 
 describe('resolveMultipartFields', () => {
   it('marks binary properties as file fields', () => {
-    const media = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/upload')!.requestBody)!)
+    const media = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/upload')!.requestBody)!,
+    )
     const fields = resolveMultipartFields(spec, media!)
     expect(fields).toEqual([
       expect.objectContaining({ name: 'file', kind: 'file', required: true }),
@@ -101,7 +113,9 @@ describe('validateRequestBody', () => {
 
 describe('buildRequestBody', () => {
   it('builds multipart form data', () => {
-    const media = primaryRequestBodyMedia(getRequestBodySchema(spec, postOp('/upload')!.requestBody)!)
+    const media = primaryRequestBodyMedia(
+      getRequestBodySchema(spec, postOp('/upload')!.requestBody)!,
+    )
     const fields = resolveMultipartFields(spec, media!)
     const file = new File(['payload'], 'test.txt', { type: 'text/plain' })
 

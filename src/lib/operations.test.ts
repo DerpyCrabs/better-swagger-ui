@@ -1,12 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import multiTag from '../../tests/fixtures/openapi/multi-tag.json'
 import type { OpenAPIV3 } from 'openapi-types'
-import {
-  collectOperations,
-  findOperationTag,
-  operationExists,
-  tagDescriptions,
-} from './operations'
+import { collectOperations, findOperationTag, operationExists, tagDescriptions } from './operations'
 
 const spec = multiTag as OpenAPIV3.Document
 

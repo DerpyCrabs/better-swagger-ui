@@ -7,7 +7,9 @@ test.describe('schema links catalog', () => {
     await clearSchemaLinksStorage(page)
   })
 
-  test('imports, selects, reveals active environment, and exports schema links', async ({ page }) => {
+  test('imports, selects, reveals active environment, and exports schema links', async ({
+    page,
+  }) => {
     await page.goto('/')
     const origin = new URL(page.url()).origin
     const catalog = {
@@ -48,8 +50,12 @@ test.describe('schema links catalog', () => {
     await expect(page.getByTestId('url-input')).toHaveValue(`${origin}${specUrl('minimal.yaml')}`)
 
     await page.getByTestId('schema-links-picker-button').click()
-    await expect(page.getByTestId('schema-links-child-link').filter({ hasText: 'dev' })).toBeVisible()
-    await expect(page.getByTestId('schema-links-child-link').filter({ hasText: 'stable' })).toBeVisible()
+    await expect(
+      page.getByTestId('schema-links-child-link').filter({ hasText: 'dev' }),
+    ).toBeVisible()
+    await expect(
+      page.getByTestId('schema-links-child-link').filter({ hasText: 'stable' }),
+    ).toBeVisible()
 
     await page.getByTestId('schema-links-open-settings').click()
     const downloadPromise = page.waitForEvent('download')

@@ -127,10 +127,7 @@ function pathScore(op: IndexedOperation, text: string, tokens: string[]): number
         segmentHits += 1
       }
     }
-    best = Math.max(
-      best,
-      segmentHits === tokens.length ? SCORE.pathSegment : SCORE.pathIncludes,
-    )
+    best = Math.max(best, segmentHits === tokens.length ? SCORE.pathSegment : SCORE.pathIncludes)
   }
 
   const compactText = text.replace(/[/{}]/g, '')

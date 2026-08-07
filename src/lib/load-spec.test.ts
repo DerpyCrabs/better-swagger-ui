@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import minimalJson from '../../tests/fixtures/openapi/minimal.json'
 import { loadSpecFromText, validateOpenApiDocument } from './load-spec'
 import { looksLikeSpecText, parseSpecText } from './parse-spec'

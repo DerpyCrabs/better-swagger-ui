@@ -8,10 +8,7 @@ import {
   type ParentProps,
 } from 'solid-js'
 import type { LoadedSpec } from './load-spec'
-import {
-  parseSecuritySchemes,
-  type SecuritySchemeInfo,
-} from './auth-config'
+import { parseSecuritySchemes, type SecuritySchemeInfo } from './auth-config'
 import {
   authRefreshDelay,
   clearOAuthAcrossSources,
@@ -46,7 +43,10 @@ interface AuthContextValue {
   isAuthorized: (schemeId: string) => boolean
   hasAnyScheme: () => boolean
   getRequestHeaders: () => Record<string, string>
-  applyToRequest: (url: string, headers: Record<string, string>) => Promise<{
+  applyToRequest: (
+    url: string,
+    headers: Record<string, string>,
+  ) => Promise<{
     url: string
     headers: Record<string, string>
     cookies: Array<{ name: string; value: string }>
@@ -99,33 +99,20 @@ function oauthEntry(input: OAuthEntryInput): StoredAuthEntry {
 
   if (input.token.refresh_token) {
     entry.refreshToken = input.token.refresh_token
-    entry.refreshExpiresAt = resolveRefreshTokenExpiry(
-      input.token,
-      input.token.refresh_token,
-    )
+    entry.refreshExpiresAt = resolveRefreshTokenExpiry(input.token, input.token.refresh_token)
   }
 
   return entry
 }
 
 function clearReusableOAuth(entry: StoredAuthEntry | undefined) {
-  if (
-    !entry?.oauthFlowKind ||
-    !entry.oauthTokenUrl ||
-    !entry.oauthClientId
-  ) {
+  if (!entry?.oauthFlowKind || !entry.oauthTokenUrl || !entry.oauthClientId) {
     return
   }
-  clearOAuthAcrossSources(
-    entry.oauthFlowKind,
-    entry.oauthTokenUrl,
-    entry.oauthClientId,
-  )
+  clearOAuthAcrossSources(entry.oauthFlowKind, entry.oauthTokenUrl, entry.oauthClientId)
 }
 
-export function AuthProvider(
-  props: ParentProps<{ loaded: Accessor<LoadedSpec | null> }>,
-) {
+export function AuthProvider(props: ParentProps<{ loaded: Accessor<LoadedSpec | null> }>) {
   const [schemes, setSchemes] = createSignal<SecuritySchemeInfo[]>([])
   const [entries, setEntries] = createSignal<Map<string, AuthEntry>>(new Map())
   const pendingRefreshes = new Map<string, Promise<void>>()
@@ -184,8 +171,7 @@ export function AuthProvider(
           expiresAt: resolveTokenExpiry(token, token.access_token),
           refreshToken: nextRefreshToken,
           refreshExpiresAt: token.refresh_token
-            ? resolveRefreshTokenExpiry(token, token.refresh_token) ??
-              entry.refreshExpiresAt
+            ? (resolveRefreshTokenExpiry(token, token.refresh_token) ?? entry.refreshExpiresAt)
             : entry.refreshExpiresAt,
         }
 
@@ -287,9 +273,7 @@ export function AuthProvider(
     hasAnyScheme: () => schemes().length > 0,
     isAuthorized: (schemeId) => {
       const entry = validEntries().get(schemeId)
-      return Boolean(
-        entry && (isAuthEntryValid(entry) || isAuthEntryRefreshable(entry)),
-      )
+      return Boolean(entry && (isAuthEntryValid(entry) || isAuthEntryRefreshable(entry)))
     },
     getRequestHeaders: () => {
       return applyAuthToRequest('', {}, validEntries().values()).headers
@@ -313,15 +297,17 @@ export function AuthProvider(
         clientCredentialsLocation: input.clientCredentialsLocation,
       })
 
-      persistOAuthEntry(oauthEntry({
-        schemeId: input.schemeId,
-        token,
-        tokenUrl: scheme.tokenUrl,
-        clientId: input.clientId,
-        clientSecret: input.clientSecret,
-        clientCredentialsLocation: input.clientCredentialsLocation,
-        flowKind: 'oauth2-password',
-      }))
+      persistOAuthEntry(
+        oauthEntry({
+          schemeId: input.schemeId,
+          token,
+          tokenUrl: scheme.tokenUrl,
+          clientId: input.clientId,
+          clientSecret: input.clientSecret,
+          clientCredentialsLocation: input.clientCredentialsLocation,
+          flowKind: 'oauth2-password',
+        }),
+      )
     },
     authorizeOAuthClientCredentials: async (input) => {
       const scheme = schemes().find((item) => item.id === input.schemeId)
@@ -336,15 +322,17 @@ export function AuthProvider(
         input.clientCredentialsLocation,
       )
 
-      persistOAuthEntry(oauthEntry({
-        schemeId: input.schemeId,
-        token,
-        tokenUrl: scheme.tokenUrl,
-        clientId: input.clientId,
-        clientSecret: input.clientSecret,
-        clientCredentialsLocation: input.clientCredentialsLocation,
-        flowKind: 'oauth2-client-credentials',
-      }))
+      persistOAuthEntry(
+        oauthEntry({
+          schemeId: input.schemeId,
+          token,
+          tokenUrl: scheme.tokenUrl,
+          clientId: input.clientId,
+          clientSecret: input.clientSecret,
+          clientCredentialsLocation: input.clientCredentialsLocation,
+          flowKind: 'oauth2-client-credentials',
+        }),
+      )
     },
     authorizeApiKey: (schemeId, token) => {
       const scheme = schemes().find((item) => item.id === schemeId)

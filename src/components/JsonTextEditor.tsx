@@ -3,7 +3,15 @@ import { createStore, reconcile } from 'solid-js/store'
 import { createVirtualizer } from '@tanstack/solid-virtual'
 import hljs from 'highlight.js/lib/core'
 import jsonLang from 'highlight.js/lib/languages/json'
-import { Braces, ChevronLeft, ChevronRight, FoldVertical, Search, UnfoldVertical, X } from '../icons'
+import {
+  Braces,
+  ChevronLeft,
+  ChevronRight,
+  FoldVertical,
+  Search,
+  UnfoldVertical,
+  X,
+} from '../icons'
 import {
   findJsonSearchMatches,
   foldIdsToRevealLine,
@@ -44,13 +52,14 @@ function textByteLength(text: string): number {
 }
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-function highlightLine(text: string, language: 'json' | 'plaintext', shouldHighlight: boolean): string {
+function highlightLine(
+  text: string,
+  language: 'json' | 'plaintext',
+  shouldHighlight: boolean,
+): string {
   if (!shouldHighlight || language !== 'json') {
     return escapeHtml(text)
   }
@@ -153,9 +162,7 @@ function JsonSearchBar(props: {
       <span
         data-testid="json-search-count"
         class={`shrink-0 px-1 text-[11px] tabular-nums ${
-          props.hasMatches
-            ? 'text-zinc-600 dark:text-zinc-300'
-            : 'text-zinc-400 dark:text-zinc-500'
+          props.hasMatches ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500'
         }`}
       >
         {props.matchLabel}
@@ -277,7 +284,9 @@ function FloatingEditorActions(props: {
             aria-label="Search"
             aria-pressed={props.searchActive}
             class={`${foldToolbarButtonClass()} ${
-              props.searchActive ? 'bg-sky-100 dark:bg-sky-950/60' : 'bg-zinc-50 dark:bg-zinc-900/80'
+              props.searchActive
+                ? 'bg-sky-100 dark:bg-sky-950/60'
+                : 'bg-zinc-50 dark:bg-zinc-900/80'
             }`}
             onClick={(event) => {
               event.stopPropagation()
@@ -345,7 +354,9 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
 
   const regions = createMemo(() => findFoldRegions(lines()))
   const nestedRegions = createMemo(() => collapsibleFoldRegions(regions()))
-  const collapsedSet = createMemo(() => new Set(Object.keys(collapsed).filter((id) => collapsed[id])))
+  const collapsedSet = createMemo(
+    () => new Set(Object.keys(collapsed).filter((id) => collapsed[id])),
+  )
   const visibleRows = createMemo(() => {
     if (props.collapsible === false) {
       return lines().map((content, lineIndex) => ({
@@ -356,7 +367,9 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
     }
     return visibleJsonLines(lines(), regions(), collapsedSet())
   })
-  const regionByStart = createMemo(() => new Map(regions().map((region) => [region.startLine, region])))
+  const regionByStart = createMemo(
+    () => new Map(regions().map((region) => [region.startLine, region])),
+  )
   const visibleText = createMemo(() =>
     visibleTextFromLines(lines(), regions(), collapsedSet(), props.collapsible !== false),
   )
@@ -538,19 +551,17 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
   }
 
   const borderClass = () =>
-    props.error
-      ? 'border-rose-500 dark:border-rose-500'
-      : 'border-zinc-200 dark:border-zinc-800'
+    props.error ? 'border-rose-500 dark:border-rose-500' : 'border-zinc-200 dark:border-zinc-800'
 
   const editorTestId = () => props.testId ?? (props.readOnly ? 'json-viewer' : 'json-text-editor')
 
-  const renderRowContent = (row: VisibleJsonLine, foldControls: 'inline' | 'overlay' | 'none' = 'inline') => {
+  const renderRowContent = (
+    row: VisibleJsonLine,
+    foldControls: 'inline' | 'overlay' | 'none' = 'inline',
+  ) => {
     const region = regionByStart().get(row.lineIndex)
     const canFold = Boolean(
-      row.foldId &&
-        region &&
-        props.collapsible !== false &&
-        !isRootFoldRegion(region, regions()),
+      row.foldId && region && props.collapsible !== false && !isRootFoldRegion(region, regions()),
     )
     const content = row.collapsed ? row.content : (lines()[row.lineIndex] ?? '')
     const parts =
@@ -644,10 +655,7 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
   const renderFoldOverlayRow = (row: VisibleJsonLine) => {
     const region = regionByStart().get(row.lineIndex)
     const canFold = Boolean(
-      row.foldId &&
-        region &&
-        props.collapsible !== false &&
-        !isRootFoldRegion(region, regions()),
+      row.foldId && region && props.collapsible !== false && !isRootFoldRegion(region, regions()),
     )
     if (!canFold || !row.foldId || !region) {
       return <div class="h-5 px-3 leading-5" aria-hidden="true" />
@@ -729,21 +737,18 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
   )
 
   const renderReadOnlyBody = () => (
-    <div
-      data-testid="json-content"
-      class="w-full min-w-min select-text"
-    >
-      <Show when={shouldVirtualize()} fallback={<For each={visibleRows()}>{(row) => renderRow(row)}</For>}>
+    <div data-testid="json-content" class="w-full min-w-min select-text">
+      <Show
+        when={shouldVirtualize()}
+        fallback={<For each={visibleRows()}>{(row) => renderRow(row)}</For>}
+      >
         {renderVirtualRows(renderRow)}
       </Show>
     </div>
   )
 
   const renderEditableBody = () => (
-    <div
-      data-testid="json-textarea-resize"
-      class="relative h-32 min-h-32 resize-y overflow-hidden"
-    >
+    <div data-testid="json-textarea-resize" class="relative h-32 min-h-32 resize-y overflow-hidden">
       <textarea
         ref={textareaRef}
         data-testid="json-textarea"
@@ -774,16 +779,10 @@ export function JsonTextEditor(props: JsonTextEditorProps) {
     </div>
   )
 
-  const showFormatToolbar = createMemo(
-    () => !(props.readOnly ?? false) && Boolean(props.onChange),
-  )
+  const showFormatToolbar = createMemo(() => !(props.readOnly ?? false) && Boolean(props.onChange))
 
   const showFloatingActions = createMemo(
-    () =>
-      searchable() ||
-      showFoldToolbar() ||
-      showFormatToolbar() ||
-      Boolean(props.copyText),
+    () => searchable() || showFoldToolbar() || showFormatToolbar() || Boolean(props.copyText),
   )
 
   const containerStyle = () =>

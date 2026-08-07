@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import schemasComposition from '../../tests/fixtures/openapi/schemas-composition.json'
 import refsLimits from '../../tests/fixtures/openapi/refs-limits.json'

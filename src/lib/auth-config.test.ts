@@ -1,11 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import securitySchemes from '../../tests/fixtures/openapi/security-schemes.json'
-import {
-  parseInitOAuth,
-  parseSecuritySchemes,
-  specHasSecurity,
-} from './auth-config'
+import { parseInitOAuth, parseSecuritySchemes, specHasSecurity } from './auth-config'
 
 const spec = securitySchemes as OpenAPIV3.Document
 

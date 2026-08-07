@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import {
   buildAcceptHeader,
@@ -8,11 +8,11 @@ import {
 
 describe('collectResponseContentTypes', () => {
   it('returns empty for operation without responses', () => {
-    expect(collectResponseContentTypes({})).toEqual([])
+    expect(collectResponseContentTypes({} as OpenAPIV3.OperationObject)).toEqual([])
   })
 
   it('skips $ref responses and dedupes MIME types', () => {
-    const operation: OpenAPIV3.OperationObject = {
+    const operation = {
       responses: {
         '200': {
           content: {
@@ -27,22 +27,21 @@ describe('collectResponseContentTypes', () => {
         },
         '500': { $ref: '#/components/responses/Error' },
       },
-    }
+    } as unknown as OpenAPIV3.OperationObject
 
-    expect(collectResponseContentTypes(operation)).toEqual([
-      'text/plain',
-      'application/json',
-    ])
+    expect(collectResponseContentTypes(operation)).toEqual(['text/plain', 'application/json'])
   })
 })
 
 describe('buildAcceptHeader', () => {
   it('uses default when no content types', () => {
-    expect(buildAcceptHeader({})).toBe('application/json, text/plain, */*')
+    expect(buildAcceptHeader({} as OpenAPIV3.OperationObject)).toBe(
+      'application/json, text/plain, */*',
+    )
   })
 
   it('prioritizes JSON over csv and appends */*', () => {
-    const operation: OpenAPIV3.OperationObject = {
+    const operation = {
       responses: {
         '200': {
           content: {
@@ -51,7 +50,7 @@ describe('buildAcceptHeader', () => {
           },
         },
       },
-    }
+    } as unknown as OpenAPIV3.OperationObject
 
     expect(buildAcceptHeader(operation)).toBe('text/csv, application/json, */*')
   })
@@ -59,22 +58,22 @@ describe('buildAcceptHeader', () => {
 
 describe('prefersBinaryResponse', () => {
   it('returns false when no content types', () => {
-    expect(prefersBinaryResponse({})).toBe(false)
+    expect(prefersBinaryResponse({} as OpenAPIV3.OperationObject)).toBe(false)
   })
 
   it('returns true when highest priority is binary/csv', () => {
-    const csvOnly: OpenAPIV3.OperationObject = {
+    const csvOnly = {
       responses: {
         '200': { content: { 'text/csv': { schema: { type: 'string' } } } },
       },
-    }
+    } as unknown as OpenAPIV3.OperationObject
     expect(prefersBinaryResponse(csvOnly)).toBe(true)
 
-    const jsonOnly: OpenAPIV3.OperationObject = {
+    const jsonOnly = {
       responses: {
         '200': { content: { 'application/json': { schema: { type: 'object' } } } },
       },
-    }
+    } as unknown as OpenAPIV3.OperationObject
     expect(prefersBinaryResponse(jsonOnly)).toBe(false)
   })
 })

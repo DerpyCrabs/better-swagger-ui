@@ -3,11 +3,7 @@ import type { InitOAuthConfig } from './auth-config'
 import { loadInitOAuth } from './auth-config'
 import { fetchSpec } from './fetch-utils'
 import { parseSpecText } from './parse-spec'
-import {
-  discoverSpecDefinitions,
-  pickDefinition,
-  type SpecDefinition,
-} from './spec-definitions'
+import { discoverSpecDefinitions, pickDefinition, type SpecDefinition } from './spec-definitions'
 
 export type { SpecDefinition }
 
@@ -77,10 +73,7 @@ export async function loadSpecFromSwaggerUi(
   const definitions = await discoverSpecDefinitions(trimmed)
   const selected = pickDefinition(definitions, definitionName)
 
-  const [raw, oauthInit] = await Promise.all([
-    fetchSpec(selected.url),
-    loadInitOAuth(trimmed),
-  ])
+  const [raw, oauthInit] = await Promise.all([fetchSpec(selected.url), loadInitOAuth(trimmed)])
 
   assertOpenApi(raw)
 

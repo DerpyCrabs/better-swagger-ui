@@ -30,7 +30,9 @@ function serializePrimitive(value: unknown): string {
 }
 
 function objectEntries(obj: Record<string, unknown>): [string, unknown][] {
-  return Object.entries(obj).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  return Object.entries(obj).filter(
+    ([, value]) => value !== undefined && value !== null && value !== '',
+  )
 }
 
 export function parseParamInputValue(meta: ParamInputMeta, raw: string): unknown | null {
@@ -63,11 +65,7 @@ export function parseParamInputValue(meta: ParamInputMeta, raw: string): unknown
   return trimmed
 }
 
-export function appendQueryParam(
-  query: URLSearchParams,
-  meta: ParamInputMeta,
-  raw: string,
-): void {
+export function appendQueryParam(query: URLSearchParams, meta: ParamInputMeta, raw: string): void {
   const value = parseParamInputValue(meta, raw)
   if (value === null) return
 
@@ -139,7 +137,9 @@ export function serializePathParamValue(meta: ParamInputMeta, raw: string): stri
   if (meta.kind === 'object' && typeof value === 'object') {
     const entries = objectEntries(value as Record<string, unknown>)
     if (explode) {
-      return entries.map(([key, entryValue]) => `${key}=${serializePrimitive(entryValue)}`).join(',')
+      return entries
+        .map(([key, entryValue]) => `${key}=${serializePrimitive(entryValue)}`)
+        .join(',')
     }
     return entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',')
   }

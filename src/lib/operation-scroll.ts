@@ -40,8 +40,7 @@ export function restoreOperationHeaderViewportPosition(opId: string, anchorTop: 
 
   const nextTop = headerEl.getBoundingClientRect().top
   return (
-    Math.abs(nextTop - anchorTop) <= 2 ||
-    (targetScrollY === 0 && nextTop >= stickyHeaderHeight())
+    Math.abs(nextTop - anchorTop) <= 2 || (targetScrollY === 0 && nextTop >= stickyHeaderHeight())
   )
 }
 

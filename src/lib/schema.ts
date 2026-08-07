@@ -99,9 +99,7 @@ export function schemaTypeLabel(
   if (resolved.type === 'array') {
     const items = resolved.items
     if (!items) return 'array'
-    const itemLabel = isReference(items)
-      ? refName(items.$ref)
-      : schemaTypeLabel(spec, items)
+    const itemLabel = isReference(items) ? refName(items.$ref) : schemaTypeLabel(spec, items)
     return `${itemLabel}[]`
   }
 
@@ -141,7 +139,10 @@ function getExpandableInfo(
     resolved.anyOf?.length
   ) {
     return {
-      expandableName: resolved.type === 'object' || resolved.properties ? 'object' : schemaTypeLabel(spec, propertySchema),
+      expandableName:
+        resolved.type === 'object' || resolved.properties
+          ? 'object'
+          : schemaTypeLabel(spec, propertySchema),
       expandableSchema: propertySchema,
     }
   }
@@ -230,8 +231,7 @@ function buildMediaSchemaInfo(
   media: OpenAPIV3.MediaTypeObject,
 ): MediaSchemaInfo {
   const schema = media.schema ? resolveSchema(spec, media.schema) : null
-  const schemaName =
-    media.schema && isReference(media.schema) ? refName(media.schema.$ref) : null
+  const schemaName = media.schema && isReference(media.schema) ? refName(media.schema.$ref) : null
 
   return {
     contentType,

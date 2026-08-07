@@ -71,15 +71,15 @@ async function requestToken(
   }
 
   if (!response.ok || !parsed.access_token) {
-    throw new Error(parsed.error_description ?? parsed.error ?? `Token request failed (${response.status})`)
+    throw new Error(
+      parsed.error_description ?? parsed.error ?? `Token request failed (${response.status})`,
+    )
   }
 
   return parsed
 }
 
-export async function fetchPasswordToken(
-  request: PasswordTokenRequest,
-): Promise<TokenResponse> {
+export async function fetchPasswordToken(request: PasswordTokenRequest): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'password',
     username: request.username,

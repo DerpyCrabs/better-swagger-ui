@@ -4,10 +4,7 @@ import type { OpenAPIV3 } from 'openapi-types'
 import { ChevronDown, ChevronRight, ChevronUp, Download, LoaderCircle, Lock, Play } from '../icons'
 import type { OperationItem } from '../lib/operations'
 import { methodColor, methodExpandedBg, methodHeaderBg } from '../lib/operations'
-import {
-  getRequestBodySchema,
-  getResponseSchemas,
-} from '../lib/schema'
+import { getRequestBodySchema, getResponseSchemas } from '../lib/schema'
 import {
   buildRequestBody,
   defaultRequestBodyText,
@@ -114,13 +111,16 @@ export function OperationBlock(props: OperationBlockProps) {
     return []
   })
 
-  const defaultBodyText = () =>
-    defaultRequestBodyText(primaryBodyMedia(), requestBodyMode())
+  const defaultBodyText = () => defaultRequestBodyText(primaryBodyMedia(), requestBodyMode())
 
   const resetFormState = (fields: FormField[]) => {
     setFormTexts(reconcile(emptyFormTexts(fields)))
     setFormFiles(
-      reconcile(Object.fromEntries(fields.filter((field) => field.kind === 'file').map((field) => [field.name, null]))),
+      reconcile(
+        Object.fromEntries(
+          fields.filter((field) => field.kind === 'file').map((field) => [field.name, null]),
+        ),
+      ),
     )
   }
 
@@ -230,13 +230,9 @@ export function OperationBlock(props: OperationBlockProps) {
     const started = performance.now()
     let url = buildUrl(props.serverUrl, props.specUrl, props.item.path, paramDefs(), paramValues)
 
-    let headers = buildRequestHeaders(
-      paramDefs(),
-      paramValues,
-      {
-        Accept: buildAcceptHeader(props.item.operation),
-      },
-    )
+    let headers = buildRequestHeaders(paramDefs(), paramValues, {
+      Accept: buildAcceptHeader(props.item.operation),
+    })
 
     let authRequest: Awaited<ReturnType<typeof auth.applyToRequest>>
     try {
@@ -491,14 +487,9 @@ export function OperationBlock(props: OperationBlockProps) {
           >
             {props.item.method}
           </span>
-          <span class={`shrink-0 whitespace-nowrap ${dmPath}`}>
-            {props.item.path}
-          </span>
+          <span class={`shrink-0 whitespace-nowrap ${dmPath}`}>{props.item.path}</span>
           <Show when={summary()}>
-            <span
-              class={`min-w-0 flex-1 truncate text-sm ${dmMuted}`}
-              title={summary()}
-            >
+            <span class={`min-w-0 flex-1 truncate text-sm ${dmMuted}`} title={summary()}>
               {summary()}
             </span>
           </Show>
@@ -535,9 +526,7 @@ export function OperationBlock(props: OperationBlockProps) {
 
           <Show when={paramDefs().length > 0}>
             <div class="mb-1">
-              <span class={dmSectionHeading}>
-                Parameters
-              </span>
+              <span class={dmSectionHeading}>Parameters</span>
             </div>
 
             <div class="overflow-x-auto rounded-md bg-white/70 dark:bg-dm-surface">
@@ -585,47 +574,39 @@ export function OperationBlock(props: OperationBlockProps) {
 
           <Show when={showsRequestBodyEditor() && requestBodyInfo()}>
             {(info) => (
-              <RequestBodyPanel
-                spec={props.spec}
-                info={info()}
-                editor={renderBodyEditor()}
-              />
+              <RequestBodyPanel spec={props.spec} info={info()} editor={renderBodyEditor()} />
             )}
           </Show>
 
           <div class="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="execute"
+              disabled={loading()}
+              onClick={(event) => {
+                event.stopPropagation()
+                void execute()
+              }}
+              class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            >
+              {loading() ? <LoaderCircle size={16} class="animate-spin" /> : <Play size={16} />}
+              Execute
+            </button>
+            <Show when={showExecuteAuthorize()}>
               <button
                 type="button"
-                data-testid="execute"
-                disabled={loading()}
+                data-testid="execute-authorize"
                 onClick={(event) => {
                   event.stopPropagation()
-                  void execute()
+                  setAuthorizeOpen(true)
                 }}
-                class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                class="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-surface dark:text-dm-text dark:hover:bg-dm-surface-hover"
               >
-                {loading() ? (
-                  <LoaderCircle size={16} class="animate-spin" />
-                ) : (
-                  <Play size={16} />
-                )}
-                Execute
+                <Lock size={16} />
+                Authorize
               </button>
-              <Show when={showExecuteAuthorize()}>
-                <button
-                  type="button"
-                  data-testid="execute-authorize"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setAuthorizeOpen(true)
-                  }}
-                  class="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-dm-border dark:bg-dm-surface dark:text-dm-text dark:hover:bg-dm-surface-hover"
-                >
-                  <Lock size={16} />
-                  Authorize
-                </button>
-              </Show>
-            </div>
+            </Show>
+          </div>
 
           <Show when={error()}>
             <p class="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
@@ -641,23 +622,20 @@ export function OperationBlock(props: OperationBlockProps) {
                   class="group rounded border border-zinc-300 bg-white/70 dark:border-dm-border dark:bg-dm-surface"
                 >
                   <summary class="flex cursor-pointer list-none items-center gap-1.5 px-2 py-1 text-xs font-semibold text-zinc-800 dark:text-dm-text">
-                    <ChevronRight
-                      size={12}
-                      class="transition-transform group-open:rotate-90"
-                    />
+                    <ChevronRight size={12} class="transition-transform group-open:rotate-90" />
                     Curl
                   </summary>
                   <div class="border-t border-zinc-200 p-1 dark:border-dm-border">
                     <pre
                       data-testid="curl-command"
                       class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-zinc-950 px-2 py-1.5 font-mono text-[11px] leading-snug text-zinc-100"
-                    ><code>{res().curlCommand}</code></pre>
+                    >
+                      <code>{res().curlCommand}</code>
+                    </pre>
                   </div>
                 </details>
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div class={dmSectionHeading}>
-                    Response
-                  </div>
+                  <div class={dmSectionHeading}>Response</div>
                   <div class="flex items-center gap-2">
                     <Show when={res().isFile}>
                       <button
@@ -696,36 +674,34 @@ export function OperationBlock(props: OperationBlockProps) {
                   </Show>
                 </div>
                 <div data-testid="response-body">
-                <Show
-                  when={res().isFile}
-                  fallback={
-                    <VirtualJsonViewer
-                      data={res().body}
-                      maxHeight="32rem"
-                      searchable={Boolean(res().copyText)}
-                    />
-                  }
-                >
-                  <div class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-dm-surface">
-                    <p class="text-zinc-700 dark:text-dm-text">
-                      File response
-                      <Show when={res().fileName}>
-                        {(name) => (
-                          <span class={`ml-1 font-mono ${dmMuted}`}>({name()})</span>
+                  <Show
+                    when={res().isFile}
+                    fallback={
+                      <VirtualJsonViewer
+                        data={res().body}
+                        maxHeight="32rem"
+                        searchable={Boolean(res().copyText)}
+                      />
+                    }
+                  >
+                    <div class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-dm-surface">
+                      <p class="text-zinc-700 dark:text-dm-text">
+                        File response
+                        <Show when={res().fileName}>
+                          {(name) => <span class={`ml-1 font-mono ${dmMuted}`}>({name()})</span>}
+                        </Show>
+                      </p>
+                      <Show when={filePreviewUrl()}>
+                        {(previewUrl) => (
+                          <img
+                            src={previewUrl()}
+                            alt={res().fileName ?? 'Response image'}
+                            class="mt-2 max-h-64 max-w-full rounded border border-zinc-200 dark:border-dm-border"
+                          />
                         )}
                       </Show>
-                    </p>
-                    <Show when={filePreviewUrl()}>
-                      {(previewUrl) => (
-                        <img
-                          src={previewUrl()}
-                          alt={res().fileName ?? 'Response image'}
-                          class="mt-2 max-h-64 max-w-full rounded border border-zinc-200 dark:border-dm-border"
-                        />
-                      )}
-                    </Show>
-                  </div>
-                </Show>
+                    </div>
+                  </Show>
                 </div>
               </div>
             )}

@@ -41,12 +41,16 @@ test.describe('browse API documentation', () => {
     const op = operationLocator(page, 'get:/alpha/a')
     await op.scrollIntoViewIfNeeded()
 
-    const headerTopBefore = await op.locator('[data-op-header]').evaluate((el) => el.getBoundingClientRect().top)
+    const headerTopBefore = await op
+      .locator('[data-op-header]')
+      .evaluate((el) => el.getBoundingClientRect().top)
 
     await op.getByRole('button').first().click()
     await expect(op.getByTestId('execute')).toBeVisible()
 
-    const headerTopAfter = await op.locator('[data-op-header]').evaluate((el) => el.getBoundingClientRect().top)
+    const headerTopAfter = await op
+      .locator('[data-op-header]')
+      .evaluate((el) => el.getBoundingClientRect().top)
     expect(headerTopAfter).toBeGreaterThanOrEqual(headerTopBefore - 2)
   })
 
@@ -103,7 +107,9 @@ test.describe('browse API documentation', () => {
     await expect(page.getByText('200', { exact: true })).toBeVisible()
   })
 
-  test('shows no request body schema section for $ref requestBody (regression)', async ({ page }) => {
+  test('shows no request body schema section for $ref requestBody (regression)', async ({
+    page,
+  }) => {
     await loadSpec(page, specUrl('refs-limits.json'))
     await expandOperation(page, 'post:/items')
     await expect(page.getByText('Create with ref body')).toBeVisible()

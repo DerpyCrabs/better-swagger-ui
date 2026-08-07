@@ -59,12 +59,16 @@ test.describe('response handling', () => {
     await expect(responseBody).toContainText('secret')
 
     await clickJsonFoldOnLineContaining(responseBody.getByTestId('json-viewer'), '"nested"')
-    await expect.poll(async () =>
-      (await jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).includes('secret'),
-    ).toBe(false)
+    await expect
+      .poll(async () =>
+        (await jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).includes('secret'),
+      )
+      .toBe(false)
 
     await clickJsonFoldOnLineContaining(responseBody.getByTestId('json-viewer'), '"nested"')
-    await expect(jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).resolves.toContain('secret')
+    await expect(jsonEditorInnerText(responseBody.getByTestId('json-viewer'))).resolves.toContain(
+      'secret',
+    )
   })
 
   test('shows file download for CSV', async ({ page }) => {
@@ -179,7 +183,9 @@ test.describe('response handling', () => {
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('required')
 
     await clickJsonFoldOnLineContaining(viewer, '"errors"')
-    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('required')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(viewer)).includes('required'))
+      .toBe(false)
   })
 
   test('shows response copy control for json bodies', async ({ page }) => {

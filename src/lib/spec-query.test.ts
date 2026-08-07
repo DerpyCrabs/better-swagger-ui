@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { sourceFromQueryKey, specQueryKey } from './spec-query'
 
 describe('sourceFromQueryKey', () => {
   it('parses url query keys', () => {
-    const key = specQueryKey({ kind: 'url', sourceUrl: 'https://example.com', definition: 'API B' })
+    const key = specQueryKey({
+      kind: 'url',
+      sourceUrl: 'https://example.com',
+      definition: 'API B',
+    })
     expect(sourceFromQueryKey(key)).toEqual({
       kind: 'url',
       sourceUrl: 'https://example.com',

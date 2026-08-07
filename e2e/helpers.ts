@@ -54,10 +54,7 @@ export async function executeOperation(page: Page, opId: string) {
   await op.getByTestId('execute').click()
 }
 
-export async function mockApi(
-  page: Page,
-  handler: (route: Route) => Promise<void> | void,
-) {
+export async function mockApi(page: Page, handler: (route: Route) => Promise<void> | void) {
   await page.unroute('**/fixtures/mock-api/**')
   await page.route('**/fixtures/mock-api/**', handler)
 }
@@ -69,10 +66,7 @@ export function specUrl(path: string) {
 export async function clearAuthStorage(page: Page) {
   await page.addInitScript(() => {
     for (const key of Object.keys(localStorage)) {
-      if (
-        key.startsWith('better-swagger-auth:') ||
-        key.startsWith('better-swagger-oauth:')
-      ) {
+      if (key.startsWith('better-swagger-auth:') || key.startsWith('better-swagger-oauth:')) {
         localStorage.removeItem(key)
       }
     }
@@ -93,8 +87,9 @@ export async function clearSchemaLinksStorage(page: Page) {
 
 /** Builds a multi-megabyte JSON payload that falls back to the flat virtualized viewer. */
 export function buildLargeJsonBody(lineCount = 2500, padLength = 1300): string {
-  const lines = Array.from({ length: lineCount }, (_, index) =>
-    `line-${String(index).padStart(6, '0')}-${'x'.repeat(padLength)}`,
+  const lines = Array.from(
+    { length: lineCount },
+    (_, index) => `line-${String(index).padStart(6, '0')}-${'x'.repeat(padLength)}`,
   )
   return JSON.stringify({ lines })
 }
@@ -109,7 +104,9 @@ export function jsonEditorContent(editor: Locator) {
 
 export function jsonEditorInnerText(editor: Locator) {
   return editor.evaluate((root) => {
-    const textarea = root.querySelector('[data-testid="json-textarea"]') as HTMLTextAreaElement | null
+    const textarea = root.querySelector(
+      '[data-testid="json-textarea"]',
+    ) as HTMLTextAreaElement | null
     if (textarea) return textarea.value
     const content = root.querySelector('[data-testid="json-content"]') as HTMLElement | null
     return content?.innerText ?? root.textContent ?? ''
@@ -163,16 +160,18 @@ export async function expectEditableFoldLayers(
     const highlightLines = Array.from(
       root.querySelectorAll('[data-testid="json-content"] [data-testid="json-line"]'),
     )
-    const overlayLines = Array.from(root.querySelectorAll('[data-testid="json-fold-overlay"] div.h-5'))
+    const overlayLines = Array.from(
+      root.querySelectorAll('[data-testid="json-fold-overlay"] div.h-5'),
+    )
     const index = highlightLines.findIndex((line) => (line.textContent ?? '').includes(marker))
     if (index === -1) return null
 
     const highlight = highlightLines[index]?.textContent ?? ''
     const overlay = overlayLines[index]?.textContent ?? ''
     return {
-      highlightBrackets: (highlight.match(/[\[{]/g) ?? []).length,
-      overlayBrackets: (overlay.match(/[\[{]/g) ?? []).length,
-      combinedBrackets: ((highlight + overlay).match(/[\[{]/g) ?? []).length,
+      highlightBrackets: (highlight.match(/[[{]/g) ?? []).length,
+      overlayBrackets: (overlay.match(/[[{]/g) ?? []).length,
+      combinedBrackets: ((highlight + overlay).match(/[[{]/g) ?? []).length,
     }
   }, lineMarker)
 
@@ -187,14 +186,16 @@ export async function expectReadOnlyFoldBrackets(viewer: Locator, lineMarker: st
   const line = viewer.locator('[data-testid="json-line"]').filter({ hasText: lineMarker }).first()
   await line.waitFor()
   const text = await line.textContent()
-  expect((text?.match(/[\[{]/g) ?? []).length).toBe(count)
+  expect((text?.match(/[[{]/g) ?? []).length).toBe(count)
 }
 
 /** Returns true when syntax-highlight markup is present under json-content. */
 export async function jsonEditorHasHighlightMarkup(editor: Locator) {
-  return editor.getByTestId('json-content').evaluate((content) =>
-    Boolean(content.querySelector('.hljs-attr, .hljs-string, .hljs-number, .hljs-literal')),
-  )
+  return editor
+    .getByTestId('json-content')
+    .evaluate((content) =>
+      Boolean(content.querySelector('.hljs-attr, .hljs-string, .hljs-number, .hljs-literal')),
+    )
 }
 
 export async function openJsonSearch(editor: Locator) {
@@ -223,8 +224,12 @@ export async function jsonSearchActiveMarkText(editor: Locator) {
 /** Mirror layer translateY should track textarea scrollTop in editable mode. */
 export async function jsonEditorMirrorOffset(editor: Locator) {
   return editor.evaluate((root) => {
-    const textarea = root.querySelector('[data-testid="json-textarea"]') as HTMLTextAreaElement | null
-    const mirror = root.querySelector('[data-testid="json-content"] div.min-w-min') as HTMLElement | null
+    const textarea = root.querySelector(
+      '[data-testid="json-textarea"]',
+    ) as HTMLTextAreaElement | null
+    const mirror = root.querySelector(
+      '[data-testid="json-content"] div.min-w-min',
+    ) as HTMLElement | null
     if (!textarea || !mirror) return null
 
     const transform = mirror.style.transform || getComputedStyle(mirror).transform

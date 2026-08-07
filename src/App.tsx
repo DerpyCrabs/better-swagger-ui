@@ -106,11 +106,7 @@ function App() {
     setTextSource(null)
     setSourceUrl(trimmed)
     setExpandedOp(null)
-    syncRoute(
-      trimmed,
-      null,
-      sameSource ? definitionForRoute(definition(), definitions()) : null,
-    )
+    syncRoute(trimmed, null, sameSource ? definitionForRoute(definition(), definitions()) : null)
   }
 
   const handleLoadContent = (sourceLabel: string, text: string) => {

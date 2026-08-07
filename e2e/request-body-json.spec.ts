@@ -51,7 +51,7 @@ test.describe('request body json editor', () => {
       const lines = Array.from(content.querySelectorAll('[data-testid="json-line"]'))
       return lines.map((line) => ({
         text: line.textContent ?? '',
-        brackets: (line.textContent?.match(/[\[{]/g) ?? []).length,
+        brackets: (line.textContent?.match(/[[{]/g) ?? []).length,
       }))
     })
 
@@ -65,7 +65,9 @@ test.describe('request body json editor', () => {
     await expectEditableFoldLayers(editor, '"meta"', { collapseAll: false })
   })
 
-  test('keeps syntax highlighting and overlay while resizing the request body editor', async ({ page }) => {
+  test('keeps syntax highlighting and overlay while resizing the request body editor', async ({
+    page,
+  }) => {
     await expandOperation(page, 'post:/items')
 
     const editor = requestBodyJsonEditor(page, 'post:/items')
@@ -86,11 +88,13 @@ test.describe('request body json editor', () => {
       element.scrollTop = 40
     })
 
-    await expect.poll(async () => {
-      const offset = await jsonEditorMirrorOffset(editor)
-      if (!offset) return false
-      return Math.abs(offset.scrollTop - offset.mirrorOffset) < 1
-    }).toBe(true)
+    await expect
+      .poll(async () => {
+        const offset = await jsonEditorMirrorOffset(editor)
+        if (!offset) return false
+        return Math.abs(offset.scrollTop - offset.mirrorOffset) < 1
+      })
+      .toBe(true)
   })
 
   test('keeps highlight layers aligned with textarea scroll position', async ({ page }) => {
@@ -103,11 +107,13 @@ test.describe('request body json editor', () => {
       element.scrollTop = 64
     })
 
-    await expect.poll(async () => {
-      const offset = await jsonEditorMirrorOffset(editor)
-      if (!offset) return false
-      return Math.abs(offset.scrollTop - offset.mirrorOffset) < 1
-    }).toBe(true)
+    await expect
+      .poll(async () => {
+        const offset = await jsonEditorMirrorOffset(editor)
+        if (!offset) return false
+        return Math.abs(offset.scrollTop - offset.mirrorOffset) < 1
+      })
+      .toBe(true)
   })
 
   test('updates request body content when editing json', async ({ page }) => {
@@ -148,7 +154,7 @@ test.describe('request body json editor', () => {
     await expect(op.getByText('Request body must be valid JSON')).toBeVisible()
 
     await textarea.evaluate((element, body) => {
-      element.value = body
+      ;(element as HTMLTextAreaElement).value = body
       element.dispatchEvent(new Event('input', { bubbles: true }))
     }, validBody)
     await textarea.blur()
@@ -160,7 +166,9 @@ test.describe('request body json editor', () => {
     await expandOperation(page, 'post:/items')
 
     const editor = operationLocator(page, 'post:/items').getByTestId('json-text-editor')
-    const resize = await editor.getByTestId('json-textarea-resize').evaluate((element) => getComputedStyle(element).resize)
+    const resize = await editor
+      .getByTestId('json-textarea-resize')
+      .evaluate((element) => getComputedStyle(element).resize)
     expect(resize).toBe('vertical')
   })
 
@@ -190,7 +198,7 @@ test.describe('request body json editor', () => {
     ].join('\n')
 
     await textarea.evaluate((element, body) => {
-      element.value = body
+      ;(element as HTMLTextAreaElement).value = body
       element.dispatchEvent(new Event('input', { bubbles: true }))
     }, uglyBody)
 
@@ -219,7 +227,9 @@ test.describe('request body json editor', () => {
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
 
     await clickJsonFoldOnLineContaining(editor, '"meta"')
-    await expect.poll(async () => (await jsonEditorInnerText(editor)).includes('"count"')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(editor)).includes('"count"'))
+      .toBe(false)
   })
 
   test('collapses and expands from the opening bracket in editable mode', async ({ page }) => {
@@ -254,7 +264,9 @@ test.describe('request body json editor', () => {
 
     await editor.getByTestId('json-toggle-all-folds').click()
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"name"')
-    await expect.poll(async () => (await jsonEditorInnerText(editor)).includes('"count"')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(editor)).includes('"count"'))
+      .toBe(false)
 
     await editor.getByTestId('json-toggle-all-folds').click()
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
@@ -281,10 +293,14 @@ test.describe('request body json editor', () => {
 
     await expect(jsonEditorInnerText(editor)).resolves.toContain('"count"')
     await clickJsonFoldOnLineContaining(editor, '"meta"')
-    await expect.poll(async () => (await jsonEditorInnerText(editor)).includes('"count"')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(editor)).includes('"count"'))
+      .toBe(false)
   })
 
-  test('does not render doubled fold brackets in the request body editor example tab', async ({ page }) => {
+  test('does not render doubled fold brackets in the request body editor example tab', async ({
+    page,
+  }) => {
     await expandOperation(page, 'post:/items')
     await operationLocator(page, 'post:/items').getByTestId('request-body-tab-example').click()
 
@@ -295,7 +311,9 @@ test.describe('request body json editor', () => {
     await expectEditableFoldLayers(editor, '"meta"')
   })
 
-  test('collapses and expands from the opening bracket in the request body editor', async ({ page }) => {
+  test('collapses and expands from the opening bracket in the request body editor', async ({
+    page,
+  }) => {
     await expandOperation(page, 'post:/items')
     await operationLocator(page, 'post:/items').getByTestId('request-body-tab-example').click()
 

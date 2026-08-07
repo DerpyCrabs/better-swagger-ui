@@ -35,9 +35,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
 
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(headers['x-api-key']).toBe('secret-key')
   })
 
@@ -60,9 +60,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
 
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(headers.authorization).toBe('Bearer my-bearer-token')
   })
 
@@ -95,9 +95,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
 
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(headers.authorization).toBe('Bearer oauth-access')
   })
 
@@ -147,9 +147,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
 
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(tokenBodies).toHaveLength(2)
     expect(tokenBodies[1]).toContain('grant_type=refresh_token')
     expect(tokenBodies[1]).toContain('refresh_token=refresh-one')
@@ -204,9 +204,9 @@ test.describe('authorization', () => {
 
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(authorization).toBe('Bearer background-refreshed-access')
   })
 
@@ -230,9 +230,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/secure')
     await executeOperation(page, 'get:/secure')
 
-    await expect(operationLocator(page, 'get:/secure').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/secure').getByTestId('response-status'),
+    ).toContainText('200')
     expect(headers.authorization).toBe(`Basic ${Buffer.from('alice:secret').toString('base64')}`)
   })
 
@@ -260,9 +260,9 @@ test.describe('authorization', () => {
     await expandOperation(page, 'get:/public')
     await executeOperation(page, 'get:/public')
 
-    await expect(operationLocator(page, 'get:/public').getByTestId('response-status')).toContainText(
-      '200',
-    )
+    await expect(
+      operationLocator(page, 'get:/public').getByTestId('response-status'),
+    ).toContainText('200')
     expect(requestUrl).toContain('api_key=query-secret')
     expect(headers.cookie).toContain('session=cookie-secret')
   })

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   applyVisibleTextEdit,
   collapsedLineContent,
@@ -38,9 +38,7 @@ describe('json-folding', () => {
   })
 
   it('hides collapsed lines and renders preview text', () => {
-    const lines = splitJsonLines(
-      '{\n  "nameInternal": {\n    "test": "kek"\n  }\n}',
-    )
+    const lines = splitJsonLines('{\n  "nameInternal": {\n    "test": "kek"\n  }\n}')
     const regions = findFoldRegions(lines)
     const nested = regions.find((region) => region.startLine === 1)
     expect(nested).toBeDefined()
@@ -103,12 +101,12 @@ describe('json-folding', () => {
   })
 
   it('expands a sole collapsed object when expanding its parent array', () => {
-    const lines = splitJsonLines(
-      '[\n  {\n    "a": 1\n  }\n]',
-    )
+    const lines = splitJsonLines('[\n  {\n    "a": 1\n  }\n]')
     const regions = findFoldRegions(lines)
     const arrayRegion = regions.find((region) => region.openChar === '[')!
-    const objectRegion = regions.find((region) => region.openChar === '{' && region.startLine === 1)!
+    const objectRegion = regions.find(
+      (region) => region.openChar === '{' && region.startLine === 1,
+    )!
 
     expect(directChildFoldRegions(arrayRegion, regions)).toEqual([objectRegion])
 
@@ -117,22 +115,16 @@ describe('json-folding', () => {
       arrayRegion.id,
       objectRegion.id,
     ])
-    expect(foldIdsToExpandWithParent(objectRegion, regions, collapsed)).toEqual([
-      objectRegion.id,
-    ])
+    expect(foldIdsToExpandWithParent(objectRegion, regions, collapsed)).toEqual([objectRegion.id])
   })
 
   it('does not auto-expand when an array has multiple children', () => {
-    const lines = splitJsonLines(
-      '[\n  {\n    "a": 1\n  },\n  {\n    "b": 2\n  }\n]',
-    )
+    const lines = splitJsonLines('[\n  {\n    "a": 1\n  },\n  {\n    "b": 2\n  }\n]')
     const regions = findFoldRegions(lines)
     const arrayRegion = regions.find((region) => region.openChar === '[')!
     const collapsed = new Set(regions.map((region) => region.id))
 
-    expect(foldIdsToExpandWithParent(arrayRegion, regions, collapsed)).toEqual([
-      arrayRegion.id,
-    ])
+    expect(foldIdsToExpandWithParent(arrayRegion, regions, collapsed)).toEqual([arrayRegion.id])
   })
 
   it('builds visible text from folded lines', () => {
@@ -181,7 +173,9 @@ describe('json-folding', () => {
   })
 
   it('formats valid json text with indentation', () => {
-    expect(formatJsonText('{"a":1,"b":[2,3]}')).toBe('{\n  "a": 1,\n  "b": [\n    2,\n    3\n  ]\n}')
+    expect(formatJsonText('{"a":1,"b":[2,3]}')).toBe(
+      '{\n  "a": 1,\n  "b": [\n    2,\n    3\n  ]\n}',
+    )
     expect(formatJsonText('{ invalid')).toBeNull()
   })
 

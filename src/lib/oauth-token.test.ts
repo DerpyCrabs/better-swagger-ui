@@ -1,9 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  fetchClientCredentialsToken,
-  fetchPasswordToken,
-  fetchRefreshToken,
-} from './oauth-token'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { fetchClientCredentialsToken, fetchPasswordToken, fetchRefreshToken } from './oauth-token'
 
 vi.mock('./proxy-fetch', () => ({
   proxyFetch: vi.fn(),

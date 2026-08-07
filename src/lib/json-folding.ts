@@ -143,20 +143,13 @@ export function foldDocRangeOnLine(
   return region ? foldDocRangeFromRegion(lines, region) : null
 }
 
-export function regionsInsideParent(
-  parent: FoldRegion,
-  regions: FoldRegion[],
-): FoldRegion[] {
+export function regionsInsideParent(parent: FoldRegion, regions: FoldRegion[]): FoldRegion[] {
   return regions.filter(
-    (region) =>
-      region.startLine > parent.startLine && region.endLine < parent.endLine,
+    (region) => region.startLine > parent.startLine && region.endLine < parent.endLine,
   )
 }
 
-export function directChildFoldRegions(
-  parent: FoldRegion,
-  regions: FoldRegion[],
-): FoldRegion[] {
+export function directChildFoldRegions(parent: FoldRegion, regions: FoldRegion[]): FoldRegion[] {
   const inside = regionsInsideParent(parent, regions)
   return inside.filter(
     (child) =>
@@ -236,7 +229,8 @@ export function visibleJsonLines(
     visible.push({
       lineIndex,
       sourceLine: lineIndex + 1,
-      content: isCollapsed && region ? collapsedLineContent(lines, region) : (lines[lineIndex] ?? ''),
+      content:
+        isCollapsed && region ? collapsedLineContent(lines, region) : (lines[lineIndex] ?? ''),
       foldId: collapsible ? region.id : undefined,
       collapsed: isCollapsed,
     })

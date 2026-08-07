@@ -48,8 +48,7 @@ export function parseInitializerUrls(text: string, base: URL): SpecDefinition[] 
     const block = blockMatch?.[1] ?? text.match(/urls\s*:\s*\[([\s\S]*?)\]/)?.[1]
     if (block) {
       const entries: { url: string; name?: string }[] = []
-      const itemPattern =
-        /\{\s*url\s*:\s*["']([^"']+)["']\s*,\s*name\s*:\s*["']([^"']+)["']\s*\}/g
+      const itemPattern = /\{\s*url\s*:\s*["']([^"']+)["']\s*,\s*name\s*:\s*["']([^"']+)["']\s*\}/g
       let match: RegExpExecArray | null
       while ((match = itemPattern.exec(block)) !== null) {
         entries.push({ url: match[1], name: match[2] })
@@ -280,7 +279,10 @@ export function pickDefinition(
   return definitions[0]
 }
 
-export async function resolveSpecUrl(input: string, definitionName?: string | null): Promise<string> {
+export async function resolveSpecUrl(
+  input: string,
+  definitionName?: string | null,
+): Promise<string> {
   const definitions = await discoverSpecDefinitions(input)
   return pickDefinition(definitions, definitionName).url
 }

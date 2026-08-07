@@ -19,8 +19,7 @@ export const specQueryKeys = {
   all: ['spec'] as const,
   url: (sourceUrl: string, definition: string | null) =>
     [...specQueryKeys.all, 'url', sourceUrl, definition ?? ''] as const,
-  text: (label: string, text: string) =>
-    [...specQueryKeys.all, 'text', label, text] as const,
+  text: (label: string, text: string) => [...specQueryKeys.all, 'text', label, text] as const,
 }
 
 export function specQueryKey(source: SpecQuerySource) {

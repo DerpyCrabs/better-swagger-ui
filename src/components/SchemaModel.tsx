@@ -2,8 +2,7 @@ import { createMemo, createSignal, For, Show } from 'solid-js'
 import type { OpenAPIV3 } from 'openapi-types'
 import { schemaProperties, type SchemaProperty } from '../lib/schema'
 
-const schemaGridClass =
-  'grid grid-cols-[minmax(8rem,26%)_auto_1fr] gap-x-6'
+const schemaGridClass = 'grid grid-cols-[minmax(8rem,26%)_auto_1fr] gap-x-6'
 
 interface SchemaModelProps {
   spec: OpenAPIV3.Document
@@ -99,10 +98,7 @@ function PropertyRow(props: {
         </div>
         <div class="ml-[30px] font-mono text-[11px] font-medium text-zinc-800 dark:text-dm-muted">
           <div class="whitespace-nowrap">
-            <Show
-              when={canExpand()}
-              fallback={props.property.type}
-            >
+            <Show when={canExpand()} fallback={props.property.type}>
               <TypeLabel
                 type={props.property.type}
                 expandableName={props.property.expandableName}
@@ -132,7 +128,12 @@ function PropertyRow(props: {
         >
           <For each={nestedProperties()}>
             {(child) => (
-              <PropertyRow spec={props.spec} property={child} depth={props.depth + 1} plain={props.plain} />
+              <PropertyRow
+                spec={props.spec}
+                property={child}
+                depth={props.depth + 1}
+                plain={props.plain}
+              />
             )}
           </For>
         </Show>

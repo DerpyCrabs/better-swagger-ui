@@ -98,7 +98,11 @@ export function AppHeader(props: AppHeaderProps) {
           Better Swagger UI
         </span>
 
-        <form onSubmit={submit} class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3" data-testid="load-form">
+        <form
+          onSubmit={submit}
+          class="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3"
+          data-testid="load-form"
+        >
           <Show when={!urlInputFocused()}>
             <SchemaLinkPicker
               catalog={props.schemaLinkCatalog}

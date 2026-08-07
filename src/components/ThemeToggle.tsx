@@ -13,7 +13,11 @@ export function ThemeToggle(props: { compact?: boolean }) {
         props.compact ? 'p-1.5' : 'rounded-lg p-2'
       }`}
     >
-      {theme() === 'dark' ? <Sun size={props.compact ? 16 : 18} /> : <Moon size={props.compact ? 16 : 18} />}
+      {theme() === 'dark' ? (
+        <Sun size={props.compact ? 16 : 18} />
+      ) : (
+        <Moon size={props.compact ? 16 : 18} />
+      )}
     </button>
   )
 }

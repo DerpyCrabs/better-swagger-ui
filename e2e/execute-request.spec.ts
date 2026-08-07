@@ -81,7 +81,7 @@ test.describe('execute request', () => {
 
     await curl.getByText('Curl', { exact: true }).click()
     await expect(op.getByTestId('curl-command')).toBeVisible()
-    await expect(op.getByTestId('curl-command')).toContainText("curl")
+    await expect(op.getByTestId('curl-command')).toContainText('curl')
     await expect(op.getByTestId('curl-command')).toContainText("'GET'")
     await expect(op.getByTestId('curl-command')).toContainText("'X-Request-Id: req-abc'")
   })
@@ -112,9 +112,9 @@ test.describe('execute request', () => {
     await expandOperation(page, 'post:/items')
     await executeOperation(page, 'post:/items')
 
-    await expect(operationLocator(page, 'post:/items').getByTestId('response-status')).toContainText(
-      '201',
-    )
+    await expect(
+      operationLocator(page, 'post:/items').getByTestId('response-status'),
+    ).toContainText('201')
     expect(body).toContain('"name"')
     expect(JSON.parse(body)).toMatchObject({ name: 'Widget' })
   })

@@ -120,14 +120,18 @@ test.describe('json viewer', () => {
       if (scroller) scroller.scrollTop = scroller.scrollHeight
     })
 
-    await expect.poll(async () => {
-      const numbers = await viewer.locator('[data-testid="json-line"]').evaluateAll((lines) =>
-        lines
-          .map((line) => Number.parseInt(line.getAttribute('data-line-number') ?? '', 10))
-          .filter((value) => !Number.isNaN(value)),
-      )
-      return Math.max(...numbers)
-    }).toBeGreaterThan(totalLines - 100)
+    await expect
+      .poll(async () => {
+        const numbers = await viewer
+          .locator('[data-testid="json-line"]')
+          .evaluateAll((lines) =>
+            lines
+              .map((line) => Number.parseInt(line.getAttribute('data-line-number') ?? '', 10))
+              .filter((value) => !Number.isNaN(value)),
+          )
+        return Math.max(...numbers)
+      })
+      .toBeGreaterThan(totalLines - 100)
   })
 
   test('does not render doubled fold brackets in collapsed response json', async ({ page }) => {
@@ -152,7 +156,9 @@ test.describe('json viewer', () => {
     await expectReadOnlyFoldBrackets(viewer, '"nested"')
   })
 
-  test('collapses and expands array folds from the opening bracket in responses', async ({ page }) => {
+  test('collapses and expands array folds from the opening bracket in responses', async ({
+    page,
+  }) => {
     await mockApi(page, async (route) => {
       await route.fulfill({
         status: 200,
@@ -188,7 +194,9 @@ test.describe('json viewer', () => {
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await clickJsonFoldOnLineContaining(viewer, '"nested"')
-    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('secret')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(viewer)).includes('secret'))
+      .toBe(false)
 
     await clickJsonFoldCloseOnLineContaining(viewer, '"nested"')
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('secret')
@@ -215,7 +223,9 @@ test.describe('json viewer', () => {
 
     await viewer.getByTestId('json-toggle-all-folds').click()
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('"message"')
-    await expect.poll(async () => (await jsonEditorInnerText(viewer)).includes('secret')).toBe(false)
+    await expect
+      .poll(async () => (await jsonEditorInnerText(viewer)).includes('secret'))
+      .toBe(false)
 
     await viewer.getByTestId('json-toggle-all-folds').click()
     await expect(jsonEditorInnerText(viewer)).resolves.toContain('secret')

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { findFoldRegions, splitJsonLines } from './json-folding'
 import {
   findJsonSearchMatches,
@@ -59,8 +59,12 @@ describe('json-search', () => {
     const matches = findJsonSearchMatches([plain], 'legalEntityId')
     const result = injectSearchMarksInHighlightedLine(html, plain, 0, matches, 0)
 
-    expect(result).toContain('data-search-highlight class="json-search-mark json-search-mark-solo json-search-mark-active">legalEntityId</span>')
-    expect(result).toContain('<span class="hljs-literal"><span class="hljs-keyword">null</span></span>')
+    expect(result).toContain(
+      'data-search-highlight class="json-search-mark json-search-mark-solo json-search-mark-active">legalEntityId</span>',
+    )
+    expect(result).toContain(
+      '<span class="hljs-literal"><span class="hljs-keyword">null</span></span>',
+    )
   })
 
   it('highlights matches that include quotes and punctuation after hljs entities', () => {
@@ -72,8 +76,14 @@ describe('json-search', () => {
 
     expect(matches).toHaveLength(1)
     expect(result.match(/data-search-highlight/g)?.length).toBe(4)
-    expect(result).toContain('data-search-highlight class="json-search-mark json-search-mark-start json-search-mark-active">legalEntityId&quot;</span>')
-    expect(result).toContain('<span class="hljs-punctuation"><span data-search-highlight class="json-search-mark json-search-mark-middle json-search-mark-active">:</span></span>')
-    expect(result).toContain('<span class="hljs-keyword"><span data-search-highlight class="json-search-mark json-search-mark-end json-search-mark-active">null</span></span>')
+    expect(result).toContain(
+      'data-search-highlight class="json-search-mark json-search-mark-start json-search-mark-active">legalEntityId&quot;</span>',
+    )
+    expect(result).toContain(
+      '<span class="hljs-punctuation"><span data-search-highlight class="json-search-mark json-search-mark-middle json-search-mark-active">:</span></span>',
+    )
+    expect(result).toContain(
+      '<span class="hljs-keyword"><span data-search-highlight class="json-search-mark json-search-mark-end json-search-mark-active">null</span></span>',
+    )
   })
 })

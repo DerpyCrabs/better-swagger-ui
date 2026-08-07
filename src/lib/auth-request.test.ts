@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { applyAuthToRequest } from './auth-request'
 import type { StoredAuthEntry } from './auth-storage'
 
@@ -46,11 +46,7 @@ describe('applyAuthToRequest', () => {
       },
     ]
 
-    const { url, cookies } = applyAuthToRequest(
-      'https://api.example/items?existing=1',
-      {},
-      entries,
-    )
+    const { url, cookies } = applyAuthToRequest('https://api.example/items?existing=1', {}, entries)
 
     expect(url).toBe('https://api.example/items?existing=1&api_key=query-secret')
     expect(cookies).toEqual([{ name: 'session', value: 'cookie-secret' }])

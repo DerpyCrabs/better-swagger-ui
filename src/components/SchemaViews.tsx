@@ -11,12 +11,7 @@ import { SchemaModel } from './SchemaModel'
 import { VirtualJsonViewer } from './VirtualJsonViewer'
 import { CopyButton } from './CopyButton'
 import { ChevronRight } from '../icons'
-import {
-  dmBorderB,
-  dmMuted,
-  dmSchemaPanel,
-  dmSectionHeading,
-} from '../lib/dm-classes'
+import { dmBorderB, dmMuted, dmSchemaPanel, dmSectionHeading } from '../lib/dm-classes'
 
 interface SchemaSectionProps {
   spec: OpenAPIV3.Document
@@ -48,7 +43,11 @@ function SchemaSection(props: SchemaSectionProps) {
           </Show>
         }
       >
-        <SchemaModel spec={props.spec} properties={props.media.properties} plain={props.plainSchema} />
+        <SchemaModel
+          spec={props.spec}
+          properties={props.media.properties}
+          plain={props.plainSchema}
+        />
       </Show>
     </div>
   )
@@ -81,9 +80,7 @@ export function RequestBodyPanel(props: RequestBodyPanelProps) {
   return (
     <section class="mt-2 space-y-1.5 pt-1">
       <div class="flex flex-wrap items-center gap-2">
-        <h4 class={dmSectionHeading}>
-          Request body
-        </h4>
+        <h4 class={dmSectionHeading}>Request body</h4>
         <Show when={props.info.required}>
           <span class="text-[11px] text-rose-600 dark:text-rose-400">required</span>
         </Show>
@@ -112,9 +109,7 @@ export function RequestBodyPanel(props: RequestBodyPanelProps) {
       </div>
 
       <Show when={tab() === 'example'}>
-        <div class={dmSchemaPanel}>
-          {props.editor}
-        </div>
+        <div class={dmSchemaPanel}>{props.editor}</div>
       </Show>
 
       <Show when={tab() === 'model'}>
@@ -146,9 +141,7 @@ export function RequestBodySchemaView(props: RequestBodySchemaViewProps) {
   return (
     <section class="mt-2 space-y-1.5 pt-1">
       <div class="flex flex-wrap items-center gap-2">
-        <h4 class={dmSectionHeading}>
-          Request body
-        </h4>
+        <h4 class={dmSectionHeading}>Request body</h4>
         <Show when={props.info.required}>
           <span class="text-[11px] text-rose-600 dark:text-rose-400">required</span>
         </Show>
@@ -203,7 +196,9 @@ function ResponseBlock(props: {
 
   const header = (
     <div class="flex flex-wrap items-center gap-2">
-      <span class={`rounded px-1.5 py-0.5 text-xs font-semibold ${statusBadgeClass(props.response.status)}`}>
+      <span
+        class={`rounded px-1.5 py-0.5 text-xs font-semibold ${statusBadgeClass(props.response.status)}`}
+      >
         {props.response.status}
       </span>
       <Show when={props.response.description}>
@@ -249,7 +244,12 @@ function ResponseBlock(props: {
   return (
     <Show
       when={props.collapsible}
-      fallback={<div class="space-y-1">{header}{body}</div>}
+      fallback={
+        <div class="space-y-1">
+          {header}
+          {body}
+        </div>
+      }
     >
       <details class="group -mx-1 rounded-md px-1 transition-colors hover:bg-zinc-100/90 dark:hover:bg-dm-surface-hover">
         <summary class="cursor-pointer list-none rounded-md py-1.5 [&::-webkit-details-marker]:hidden">
@@ -271,9 +271,7 @@ export function ResponsesSchemaView(props: ResponsesSchemaViewProps) {
   return (
     <Show when={props.responses.length > 0}>
       <section class="mt-2 space-y-2 pt-1">
-        <h4 class={dmSectionHeading}>
-          Responses
-        </h4>
+        <h4 class={dmSectionHeading}>Responses</h4>
         <For each={props.responses}>
           {(response) => (
             <ResponseBlock

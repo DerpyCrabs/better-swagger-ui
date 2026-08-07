@@ -205,11 +205,15 @@ test.describe('json search', () => {
 
     const viewer = responseJsonViewer(page, 'get:/json')
     await viewer.getByTestId('json-toggle-all-folds').click()
-    await expect(viewer.locator('[data-testid="json-line"]').filter({ hasText: 'hidden-value' })).toHaveCount(0)
+    await expect(
+      viewer.locator('[data-testid="json-line"]').filter({ hasText: 'hidden-value' }),
+    ).toHaveCount(0)
 
     await searchJsonEditor(viewer, 'hidden-value')
     await expect(viewer.getByTestId('json-search-count')).toHaveText('1/1')
-    await expect(viewer.locator('[data-testid="json-line"]').filter({ hasText: 'hidden-value' })).toHaveCount(1)
+    await expect(
+      viewer.locator('[data-testid="json-line"]').filter({ hasText: 'hidden-value' }),
+    ).toHaveCount(1)
     await expect(jsonSearchMarks(viewer)).toHaveCount(1)
   })
 
@@ -236,7 +240,10 @@ test.describe('json search', () => {
     const highlightedText = await jsonSearchMarks(viewer).allInnerTexts()
     expect(highlightedText.join('')).toBe('legalEntityId": null')
 
-    const line = viewer.locator('[data-testid="json-line"]').filter({ hasText: 'legalEntityId' }).first()
+    const line = viewer
+      .locator('[data-testid="json-line"]')
+      .filter({ hasText: 'legalEntityId' })
+      .first()
     await expect(line.locator('.hljs-attr')).toHaveCount(1)
     await expect(line.locator('.hljs-punctuation [data-search-highlight]')).toHaveCount(1)
     await expect(line.locator('.hljs-keyword [data-search-highlight]')).toHaveCount(1)
@@ -263,15 +270,15 @@ test.describe('json search', () => {
       .getByTestId('json-content')
       .locator('[data-search-highlight].json-search-mark-active')
       .evaluateAll((marks) =>
-      marks.map((mark) => {
-        const computed = getComputedStyle(mark)
-        return {
-          outlineWidth: computed.outlineWidth,
-          borderWidth: computed.borderTopWidth,
-          boxShadow: computed.boxShadow,
-        }
-      }),
-    )
+        marks.map((mark) => {
+          const computed = getComputedStyle(mark)
+          return {
+            outlineWidth: computed.outlineWidth,
+            borderWidth: computed.borderTopWidth,
+            boxShadow: computed.boxShadow,
+          }
+        }),
+      )
 
     expect(styles.length).toBeGreaterThan(0)
     for (const style of styles) {
@@ -299,8 +306,12 @@ test.describe('json search', () => {
     await openJsonSearch(viewer)
 
     const overlap = await viewer.evaluate(() => {
-      const searchInput = document.querySelector('[data-testid="json-search-input"]') as HTMLElement | null
-      const foldButton = document.querySelector('[data-testid="json-toggle-all-folds"]') as HTMLElement | null
+      const searchInput = document.querySelector(
+        '[data-testid="json-search-input"]',
+      ) as HTMLElement | null
+      const foldButton = document.querySelector(
+        '[data-testid="json-toggle-all-folds"]',
+      ) as HTMLElement | null
       if (!searchInput || !foldButton) return false
 
       const inputBox = searchInput.getBoundingClientRect()

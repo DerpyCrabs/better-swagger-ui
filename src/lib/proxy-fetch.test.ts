@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { shouldProxyUrl, toProxyUrl } from './proxy-fetch'
 
 describe('proxy-fetch helpers', () => {

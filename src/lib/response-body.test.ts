@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   defaultDownloadName,
   fileNameFromDisposition,
@@ -50,9 +50,9 @@ describe('resolveDownloadName', () => {
   it('follows fallback chain', () => {
     expect(resolveDownloadName('a.json', null, 'application/json')).toBe('a.json')
     expect(resolveDownloadName(null, 'attachment; filename=b.csv', null)).toBe('b.csv')
-    expect(
-      resolveDownloadName(null, null, 'text/csv', 'http://localhost/v1/provider/csv'),
-    ).toBe('provider.csv')
+    expect(resolveDownloadName(null, null, 'text/csv', 'http://localhost/v1/provider/csv')).toBe(
+      'provider.csv',
+    )
     expect(resolveDownloadName(null, null, 'application/pdf')).toBe('download.pdf')
   })
 })

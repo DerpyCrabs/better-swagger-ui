@@ -1,4 +1,4 @@
-export { default as AlertCircle } from 'lucide-solid/icons/alert-circle'
+export { default as AlertCircle } from 'lucide-solid/icons/circle-alert'
 export { default as ArrowRight } from 'lucide-solid/icons/arrow-right'
 export { default as Braces } from 'lucide-solid/icons/braces'
 export { default as Check } from 'lucide-solid/icons/check'

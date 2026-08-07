@@ -4,7 +4,14 @@ import { resolveSchema, schemaTypeLabel } from './schema'
 
 type SchemaObject = OpenAPIV3.SchemaObject
 
-export type ParamInputKind = 'string' | 'integer' | 'number' | 'boolean' | 'enum' | 'array' | 'object'
+export type ParamInputKind =
+  | 'string'
+  | 'integer'
+  | 'number'
+  | 'boolean'
+  | 'enum'
+  | 'array'
+  | 'object'
 
 import type { ParamStyle } from './param-serialization'
 import { parseParamInputValue } from './param-serialization'
@@ -31,8 +38,7 @@ export interface ParamInputMeta {
   example?: string
 }
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function schemaKind(schema: SchemaObject | null): ParamInputKind {
   if (!schema) return 'string'
@@ -76,10 +82,7 @@ function arrayItemMeta(
   }
 }
 
-function buildMeta(
-  spec: OpenAPIV3.Document,
-  param: OpenAPIV3.ParameterObject,
-): ParamInputMeta {
+function buildMeta(spec: OpenAPIV3.Document, param: OpenAPIV3.ParameterObject): ParamInputMeta {
   const resolved = param.schema ? resolveSchema(spec, param.schema) : null
   const kind = schemaKind(resolved)
   const arrayItems = kind === 'array' ? arrayItemMeta(spec, resolved) : {}
@@ -142,9 +145,7 @@ export function resolveParameterMeta(
 }
 
 export function emptyParamValues(defs: ParamInputMeta[]): Record<string, string> {
-  return Object.fromEntries(
-    defs.map((param) => [param.name, param.defaultValue ?? '']),
-  )
+  return Object.fromEntries(defs.map((param) => [param.name, param.defaultValue ?? '']))
 }
 
 function validateStringValue(meta: ParamInputMeta, value: string): string | null {
@@ -262,9 +263,7 @@ export function validateParamValue(meta: ParamInputMeta, value: string): string 
 
     const itemMeta: ParamInputMeta = {
       ...meta,
-      kind: meta.arrayItemEnum?.length
-        ? 'enum'
-        : (meta.arrayItemKind ?? 'string'),
+      kind: meta.arrayItemEnum?.length ? 'enum' : (meta.arrayItemKind ?? 'string'),
       enumValues: meta.arrayItemEnum,
       required: true,
     }

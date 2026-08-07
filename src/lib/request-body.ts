@@ -32,7 +32,9 @@ function isBinarySchema(schema: OpenAPIV3.SchemaObject | null): boolean {
   return schema?.type === 'string' && schema.format === 'binary'
 }
 
-export function primaryRequestBodyMedia(info: { media: MediaSchemaInfo[] }): MediaSchemaInfo | null {
+export function primaryRequestBodyMedia(info: {
+  media: MediaSchemaInfo[]
+}): MediaSchemaInfo | null {
   const json = info.media.find((item) => item.contentType.includes('json'))
   if (json) return json
 
@@ -121,7 +123,9 @@ export function resolveUrlEncodedFields(
 }
 
 export function emptyFormTexts(fields: FormField[]): Record<string, string> {
-  return Object.fromEntries(fields.filter((field) => field.kind === 'text').map((field) => [field.name, '']))
+  return Object.fromEntries(
+    fields.filter((field) => field.kind === 'text').map((field) => [field.name, '']),
+  )
 }
 
 export function emptyMultipartTexts(fields: FormField[]): Record<string, string> {
@@ -240,7 +244,10 @@ export function buildRequestBody(input: RequestBodyBuildInput): RequestBodyBuild
   }
 }
 
-export function exampleBodyData(media: MediaSchemaInfo | null, mode: RequestBodyMode | null): unknown {
+export function exampleBodyData(
+  media: MediaSchemaInfo | null,
+  mode: RequestBodyMode | null,
+): unknown {
   if (!media || mode === 'file' || mode === 'multipart' || mode === 'urlencoded') {
     return media?.example ?? null
   }

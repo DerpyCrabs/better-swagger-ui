@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 import {
   AUTH_OAUTH_SHARED_PREFIX,
   AUTH_STORAGE_PREFIX,
@@ -84,10 +84,7 @@ describe('resolveTokenExpiry', () => {
 describe('resolveRefreshTokenExpiry', () => {
   it('uses refresh_expires_in', () => {
     const before = Date.now()
-    const expiry = resolveRefreshTokenExpiry(
-      { refresh_expires_in: 1800 },
-      'refresh-token',
-    )
+    const expiry = resolveRefreshTokenExpiry({ refresh_expires_in: 1800 }, 'refresh-token')
     expect(expiry).toBeDefined()
     expect(expiry!).toBeGreaterThanOrEqual(before + 1800 * 1000 - 10)
   })
@@ -169,10 +166,7 @@ describe('refreshable auth entries', () => {
 describe('purgeExpiredEntries', () => {
   it('removes expired entries', () => {
     const entries = new Map<string, StoredAuthEntry>([
-      [
-        'valid',
-        { schemeId: 'valid', type: 'bearer', token: 't', expiresAt: Date.now() + 60_000 },
-      ],
+      ['valid', { schemeId: 'valid', type: 'bearer', token: 't', expiresAt: Date.now() + 60_000 }],
       [
         'expired',
         { schemeId: 'expired', type: 'bearer', token: 't', expiresAt: Date.now() - 1000 },
@@ -186,7 +180,9 @@ describe('purgeExpiredEntries', () => {
 
 describe('storageKey', () => {
   it('includes source URL', () => {
-    expect(storageKey('https://example.com/swagger-ui/')).toContain('https://example.com/swagger-ui/')
+    expect(storageKey('https://example.com/swagger-ui/')).toContain(
+      'https://example.com/swagger-ui/',
+    )
   })
 })
 
@@ -238,16 +234,14 @@ describe('OAuth auth reuse across sources', () => {
   it('matches reusable OAuth entries by flow, token URL, and client id', () => {
     const entry = oauthEntry()
     expect(entryMatchesOAuthReuse(entry, 'oauth2-password', tokenUrl, 'sp-client')).toBe(true)
-    expect(
-      entryMatchesOAuthReuse(entry, 'oauth2-client-credentials', tokenUrl, 'sp-client'),
-    ).toBe(false)
+    expect(entryMatchesOAuthReuse(entry, 'oauth2-client-credentials', tokenUrl, 'sp-client')).toBe(
+      false,
+    )
     expect(entryMatchesOAuthReuse(entry, 'oauth2-password', tokenUrl, 'other-client')).toBe(false)
   })
 
   it('allows empty client id to match any client on the same token URL', () => {
-    expect(
-      entryMatchesOAuthReuse(oauthEntry(), 'oauth2-password', `${tokenUrl}/`, ''),
-    ).toBe(true)
+    expect(entryMatchesOAuthReuse(oauthEntry(), 'oauth2-password', `${tokenUrl}/`, '')).toBe(true)
   })
 
   it('reuses OAuth auth from another source when schemes match', () => {
@@ -270,17 +264,11 @@ describe('OAuth auth reuse across sources', () => {
   it('keeps the freshest local token when peers are older', () => {
     const older = Date.now() + 30_000
     const newer = Date.now() + 90_000
-    persistEntries(
-      sourceA,
-      new Map([['oauth', oauthEntry({ token: 'from-a', expiresAt: older })]]),
-    )
+    persistEntries(sourceA, new Map([['oauth', oauthEntry({ token: 'from-a', expiresAt: older })]]))
     persistEntries(
       sourceB,
       new Map([
-        [
-          'Keycloak',
-          oauthEntry({ schemeId: 'Keycloak', token: 'local-b', expiresAt: newer }),
-        ],
+        ['Keycloak', oauthEntry({ schemeId: 'Keycloak', token: 'local-b', expiresAt: newer })],
       ]),
     )
 
@@ -302,10 +290,7 @@ describe('OAuth auth reuse across sources', () => {
     persistEntries(
       sourceB,
       new Map([
-        [
-          'Keycloak',
-          oauthEntry({ schemeId: 'Keycloak', token: 'stale-local', expiresAt: older }),
-        ],
+        ['Keycloak', oauthEntry({ schemeId: 'Keycloak', token: 'stale-local', expiresAt: older })],
       ]),
     )
     persistSharedOAuthEntry(
@@ -369,10 +354,9 @@ describe('OAuth auth reuse across sources', () => {
       new Map([['Keycloak', oauthEntry({ schemeId: 'Keycloak', token: 'old-b' })]]),
     )
 
-    syncOAuthEntryAcrossSources(
-      oauthEntry({ token: 'refreshed', refreshToken: 'refresh-new' }),
-      { excludeSourceUrl: sourceA },
-    )
+    syncOAuthEntryAcrossSources(oauthEntry({ token: 'refreshed', refreshToken: 'refresh-new' }), {
+      excludeSourceUrl: sourceA,
+    })
 
     const rawB = localStorage.getItem(storageKey(sourceB))
     expect(rawB).toContain('refreshed')
@@ -384,14 +368,16 @@ describe('OAuth auth reuse across sources', () => {
     persistEntries(sourceA, new Map([['oauth', oauthEntry()]]))
 
     publishOAuthEntry(
-      oauthEntry({ token: 'refreshed', refreshToken: 'refresh-new', expiresAt: Date.now() + 60_000 }),
+      oauthEntry({
+        token: 'refreshed',
+        refreshToken: 'refresh-new',
+        expiresAt: Date.now() + 60_000,
+      }),
     )
 
     const fingerprint = entryOAuthFingerprint(oauthEntry())
     expect(fingerprint).toBeTruthy()
-    expect(
-      localStorage.getItem(sharedOAuthStorageKey(fingerprint!)),
-    ).toContain('refreshed')
+    expect(localStorage.getItem(sharedOAuthStorageKey(fingerprint!))).toContain('refreshed')
 
     // Simulate switching to a service that never had its own auth bag.
     localStorage.removeItem(storageKey(sourceB))
@@ -406,9 +392,7 @@ describe('OAuth auth reuse across sources', () => {
 
     expect(loaded.get('Keycloak')?.token).toBe('refreshed')
     expect(loaded.get('Keycloak')?.refreshToken).toBe('refresh-new')
-    expect(
-      loadSharedOAuthEntry('oauth2-password', tokenUrl, 'sp-client')?.token,
-    ).toBe('refreshed')
+    expect(loadSharedOAuthEntry('oauth2-password', tokenUrl, 'sp-client')?.token).toBe('refreshed')
   })
 
   it('clears matching OAuth entries from every source on logout', () => {
@@ -437,9 +421,7 @@ describe('OAuth auth reuse across sources', () => {
     const rawB = localStorage.getItem(storageKey(sourceB))
     expect(rawB).not.toContain('access-a')
     expect(rawB).toContain('keep-me')
-    expect(
-      loadSharedOAuthEntry('oauth2-password', tokenUrl, 'sp-client'),
-    ).toBeNull()
+    expect(loadSharedOAuthEntry('oauth2-password', tokenUrl, 'sp-client')).toBeNull()
   })
 
   it('uses AUTH_STORAGE_PREFIX for storage keys', () => {

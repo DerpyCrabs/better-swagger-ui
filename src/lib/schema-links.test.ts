@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   exportSchemaLinkCatalog,
   findSchemaLinkMatch,
@@ -53,10 +53,12 @@ describe('schema-links', () => {
       ]
     }`)
 
-    expect(findSchemaLinkMatch(catalog, 'https://example.test/swagger-ui/index.html#/')?.label).toBe('Gateway')
-    expect(findSchemaLinkMatch(catalog, 'https://dev.example.test/swagger-ui/index.html')?.label).toBe(
-      'Product Type / dev',
-    )
+    expect(
+      findSchemaLinkMatch(catalog, 'https://example.test/swagger-ui/index.html#/')?.label,
+    ).toBe('Gateway')
+    expect(
+      findSchemaLinkMatch(catalog, 'https://dev.example.test/swagger-ui/index.html')?.label,
+    ).toBe('Product Type / dev')
   })
 
   it('rejects invalid imports', () => {

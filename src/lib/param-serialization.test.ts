@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { ParamInputMeta } from './param-schema'
 import {
   appendQueryParam,
@@ -6,7 +6,9 @@ import {
   serializePathParamValue,
 } from './param-serialization'
 
-function meta(partial: Partial<ParamInputMeta> & Pick<ParamInputMeta, 'name' | 'in' | 'kind'>): ParamInputMeta {
+function meta(
+  partial: Partial<ParamInputMeta> & Pick<ParamInputMeta, 'name' | 'in' | 'kind'>,
+): ParamInputMeta {
   return {
     required: false,
     schemaType: partial.kind,

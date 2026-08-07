@@ -32,9 +32,7 @@ function EnumSelect(props: ParamInputProps) {
       class={fieldClass(Boolean(props.error))}
     >
       <option value="">{props.meta.required ? 'Select…' : '—'}</option>
-      <For each={options()}>
-        {(option) => <option value={option}>{option}</option>}
-      </For>
+      <For each={options()}>{(option) => <option value={option}>{option}</option>}</For>
     </select>
   )
 }

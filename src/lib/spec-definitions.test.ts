@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { queryClient } from './query-client'
 import {
   discoverSpecDefinitions,
@@ -115,9 +115,7 @@ describe('discoverSpecDefinitions', () => {
       ],
     })
 
-    const defs = await discoverSpecDefinitions(
-      'http://localhost:5199/swagger-ui/swagger-config/',
-    )
+    const defs = await discoverSpecDefinitions('http://localhost:5199/swagger-ui/swagger-config/')
     expect(defs).toHaveLength(2)
     expect(defs[0].name).toBe('API A')
   })

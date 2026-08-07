@@ -22,9 +22,7 @@ test.describe('definition selection', () => {
     await page.getByTestId('definition-select').selectOption('API B')
     await expect(page.getByTestId('api-title')).toHaveText('Definition B')
 
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('definition'))
-      .toBe('API B')
+    await expect.poll(() => new URL(page.url()).searchParams.get('definition')).toBe('API B')
 
     await expect(page.getByTestId('definition-select')).toHaveValue('API B')
   })
@@ -42,9 +40,7 @@ test.describe('definition selection', () => {
 
     await expect(page.getByTestId('api-title')).toHaveText('Definition B')
     await expect(page.getByTestId('definition-select')).toHaveValue('API B')
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('definition'))
-      .toBe('API B')
+    await expect.poll(() => new URL(page.url()).searchParams.get('definition')).toBe('API B')
   })
 
   test('does not reset definition while refetch is in progress', async ({ page }) => {

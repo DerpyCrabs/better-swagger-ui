@@ -33,7 +33,8 @@ export function fileNameFromDisposition(header: string | null | undefined): stri
     }
   }
 
-  const quoted = value.match(/filename\s*=\s*"([^"]*)"/i) ?? value.match(/filename\s*=\s*'([^']*)'/i)
+  const quoted =
+    value.match(/filename\s*=\s*"([^"]*)"/i) ?? value.match(/filename\s*=\s*'([^']*)'/i)
   if (quoted?.[1]) return quoted[1]
 
   const plain = value.match(/filename\s*=\s*([^;\n]+)/i)

@@ -178,13 +178,13 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
             data-testid="schema-links-settings-dialog"
           >
             <header class="flex shrink-0 items-center gap-2 border-b border-zinc-200/80 px-3 py-2.5 dark:border-zinc-800">
-              <h2 id="schema-links-title" class="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2
+                id="schema-links-title"
+                class="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+              >
                 Schema links
               </h2>
-              <HeaderActions
-                onImport={() => importFileInput?.click()}
-                onExport={exportCatalog}
-              />
+              <HeaderActions onImport={() => importFileInput?.click()} onExport={exportCatalog} />
               <button
                 type="button"
                 class={iconActionClass}
@@ -300,7 +300,9 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
                           }
                         >
                           <div>
-                            <div class={`${groupRowGrid} bg-zinc-50/60 px-3 py-1 dark:bg-zinc-900/30`}>
+                            <div
+                              class={`${groupRowGrid} bg-zinc-50/60 px-3 py-1 dark:bg-zinc-900/30`}
+                            >
                               <input
                                 class={`${fieldClass} font-medium`}
                                 value={item().type === 'group' ? item().name : ''}
@@ -402,11 +404,21 @@ export function SchemaLinkSettingsDialog(props: SchemaLinkSettingsDialogProps) {
             </div>
 
             <div class="flex shrink-0 items-center gap-2 border-t border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
-              <button type="button" class={footerActionClass} data-testid="schema-links-add-link" onClick={addLink}>
+              <button
+                type="button"
+                class={footerActionClass}
+                data-testid="schema-links-add-link"
+                onClick={addLink}
+              >
                 <Plus size={14} />
                 Link
               </button>
-              <button type="button" class={footerActionClass} data-testid="schema-links-add-group" onClick={addGroup}>
+              <button
+                type="button"
+                class={footerActionClass}
+                data-testid="schema-links-add-group"
+                onClick={addGroup}
+              >
                 <Plus size={14} />
                 Group
               </button>

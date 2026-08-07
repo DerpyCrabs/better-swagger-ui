@@ -6,7 +6,9 @@ const SECOND_OP = 'post:/big-b'
 
 function operationHeaderMetrics(page: import('@playwright/test').Page, opId: string) {
   return page.evaluate((id) => {
-    const header = document.querySelector(`[data-op-id="${CSS.escape(id)}"] [data-op-header]`) as HTMLElement | null
+    const header = document.querySelector(
+      `[data-op-id="${CSS.escape(id)}"] [data-op-header]`,
+    ) as HTMLElement | null
     const stickyTop = document.querySelector('header')?.getBoundingClientRect().height ?? 0
     const rect = header?.getBoundingClientRect()
     return {
@@ -24,7 +26,9 @@ test.describe('huge operation expand', () => {
     await page.getByTestId('tag-section-big').getByRole('button').click()
   })
 
-  test('expanding a huge operation does not scroll the page or move the header', async ({ page }) => {
+  test('expanding a huge operation does not scroll the page or move the header', async ({
+    page,
+  }) => {
     const op = operationLocator(page, FIRST_OP)
     await op.scrollIntoViewIfNeeded()
 
@@ -41,7 +45,9 @@ test.describe('huge operation expand', () => {
     expect(after.headerTop).toBeGreaterThanOrEqual(before.headerTop - 2)
   })
 
-  test('opening a second huge operation keeps its header on screen after the first is expanded', async ({ page }) => {
+  test('opening a second huge operation keeps its header on screen after the first is expanded', async ({
+    page,
+  }) => {
     const first = operationLocator(page, FIRST_OP)
     const second = operationLocator(page, SECOND_OP)
 

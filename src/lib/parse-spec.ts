@@ -50,11 +50,7 @@ export function parseSpecText(text: string): unknown {
   }
 }
 
-export function parseSpecResponse(
-  text: string,
-  url: string,
-  contentType: string | null,
-): unknown {
+export function parseSpecResponse(text: string, url: string, contentType: string | null): unknown {
   if (isYamlSpecUrl(url) || contentTypeIsYaml(contentType)) {
     return parseSpecText(text)
   }

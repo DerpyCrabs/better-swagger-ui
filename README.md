@@ -4,7 +4,7 @@ A minimal Swagger UI rewrite in SolidJS. Paste a link to an existing Swagger UI 
 
 ## Stack
 
-- **SolidJS** + Vite
+- **SolidJS** + [Vite+](https://viteplus.dev/) (`vp`)
 - **Tailwind CSS** + Lucide icons
 - **openapi-types** — OpenAPI TypeScript types
 - **yaml** — OpenAPI YAML parsing
@@ -14,18 +14,20 @@ A minimal Swagger UI rewrite in SolidJS. Paste a link to an existing Swagger UI 
 
 ## Development
 
+Install the Vite+ CLI once (`vp`), then:
+
 ```bash
-npm install
-npm run dev
+vp install
+vp dev
 ```
 
 To bypass CORS while developing, start the dev server with the local proxy enabled:
 
 ```bash
-npm run dev:proxy
+vp run dev:proxy
 ```
 
-This routes cross-origin requests through `/__proxy` on the local Vite dev server only. Regular `npm run dev`, Vercel deployments, and production builds call APIs directly from the browser, so the target API must allow CORS or be on the same origin.
+This routes cross-origin requests through `/__proxy` on the local Vite+ / Vite dev server only. Regular `vp dev`, Vercel deployments, and production builds call APIs directly from the browser, so the target API must allow CORS or be on the same origin.
 
 ## Usage
 
@@ -43,11 +45,12 @@ This routes cross-origin requests through `/__proxy` on the local Vite dev serve
 ## Testing
 
 ```bash
-npm test              # Vitest unit tests
-npm run test:watch    # Vitest watch mode
-npm run test:coverage # Coverage report for src/lib
-npm run test:e2e      # Playwright E2E (starts dev + fixture servers)
-npm run test:e2e:ui   # Playwright interactive UI
+vp test               # Vitest unit tests (watch)
+vp test run           # Vitest unit tests (CI)
+vp run test:coverage  # Coverage report for src/lib
+vp run test:e2e       # Playwright E2E (starts dev + fixture servers)
+vp run test:e2e:ui    # Playwright interactive UI
+vp check              # Format, lint, and type-check
 ```
 
 E2E tests use OpenAPI fixtures in `tests/fixtures/`, served by the dev server at `/fixtures/` (same origin, no CORS issues).

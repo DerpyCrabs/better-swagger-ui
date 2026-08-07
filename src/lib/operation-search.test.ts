@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import multiTag from '../../tests/fixtures/openapi/multi-tag.json'
 import { collectOperations, tagDescriptions, type OperationItem } from './operations'

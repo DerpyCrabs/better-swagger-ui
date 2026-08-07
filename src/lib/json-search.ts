@@ -67,10 +67,7 @@ export function foldIdsToRevealLine(
 }
 
 export function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function searchMarkOpen(isActive: boolean, segment: 'solo' | 'start' | 'middle' | 'end'): string {

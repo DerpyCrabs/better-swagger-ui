@@ -89,6 +89,8 @@ paths:
     await page.getByTestId('load-form').evaluate((form) => {
       ;(form as HTMLFormElement).requestSubmit()
     })
-    await expect(page.getByText(/Could not fetch|Could not find OpenAPI|Failed to load spec/i)).toBeVisible()
+    await expect(
+      page.getByText(/Could not fetch|Could not find OpenAPI|Failed to load spec/i),
+    ).toBeVisible()
   })
 })

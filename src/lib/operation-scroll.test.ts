@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 describe('operation header viewport restore', () => {
   it('scrolls up when content above collapses but scrollY is stale', () => {

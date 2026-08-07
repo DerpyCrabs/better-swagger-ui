@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { OpenAPIV3 } from 'openapi-types'
 import paramsFull from '../../tests/fixtures/openapi/params-full.json'
 import {
@@ -62,12 +62,9 @@ describe('validateParamValue', () => {
 
   it('validates uuid and email', () => {
     expect(validateParamValue(uuidMeta, 'not-a-uuid')).toMatch(/UUID/)
-    expect(
-      validateParamValue(
-        { ...uuidMeta, format: 'email', name: 'email' },
-        'bad',
-      ),
-    ).toMatch(/email/)
+    expect(validateParamValue({ ...uuidMeta, format: 'email', name: 'email' }, 'bad')).toMatch(
+      /email/,
+    )
   })
 
   it('validates enum and integer bounds', () => {

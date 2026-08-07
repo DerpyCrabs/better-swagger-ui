@@ -208,7 +208,11 @@ export function SchemaLinkPicker(props: SchemaLinkPickerProps) {
                       </button>
                     }
                   >
-                    <div class={index() > 0 ? 'mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800' : ''}>
+                    <div
+                      class={
+                        index() > 0 ? 'mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800' : ''
+                      }
+                    >
                       <p
                         class="px-3 pb-0.5 text-sm font-medium text-zinc-600 dark:text-zinc-400"
                         data-testid="schema-links-top-item"

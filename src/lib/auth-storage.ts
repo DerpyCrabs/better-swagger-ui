@@ -36,9 +36,9 @@ function decodeJwtExpiry(accessToken: string): number | undefined {
     const payloadPart = accessToken.split('.')[1]
     if (!payloadPart) return undefined
 
-    const payload = JSON.parse(
-      atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')),
-    ) as { exp?: number }
+    const payload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/'))) as {
+      exp?: number
+    }
 
     if (typeof payload.exp === 'number') {
       return payload.exp * 1000
@@ -54,9 +54,8 @@ export function resolveTokenExpiry(
   response: Pick<TokenResponse, 'expires_in'>,
   accessToken: string,
 ): number | undefined {
-  const fromResponse = response.expires_in !== undefined
-    ? Date.now() + response.expires_in * 1000
-    : undefined
+  const fromResponse =
+    response.expires_in !== undefined ? Date.now() + response.expires_in * 1000 : undefined
   const fromJwt = decodeJwtExpiry(accessToken)
 
   if (fromResponse && fromJwt) return Math.min(fromResponse, fromJwt)
@@ -68,10 +67,7 @@ export function resolveRefreshTokenExpiry(
   refreshToken: string | undefined,
 ): number | undefined {
   if (!refreshToken) return undefined
-  return resolveTokenExpiry(
-    { expires_in: response.refresh_expires_in },
-    refreshToken,
-  )
+  return resolveTokenExpiry({ expires_in: response.refresh_expires_in }, refreshToken)
 }
 
 export function isAuthEntryValid(entry: StoredAuthEntry, now = Date.now()): boolean {
@@ -151,11 +147,7 @@ export function entryOAuthFingerprint(entry: StoredAuthEntry): string | null {
   if (!entry.oauthFlowKind || !entry.oauthTokenUrl || !entry.oauthClientId) {
     return null
   }
-  return oauthFingerprint(
-    entry.oauthFlowKind,
-    entry.oauthTokenUrl,
-    entry.oauthClientId,
-  )
+  return oauthFingerprint(entry.oauthFlowKind, entry.oauthTokenUrl, entry.oauthClientId)
 }
 
 export function sharedOAuthStorageKey(fingerprint: string) {
@@ -184,21 +176,14 @@ export function entryMatchesOAuthReuse(
   return true
 }
 
-function compareOAuthEntries(
-  a: StoredAuthEntry,
-  b: StoredAuthEntry,
-  now = Date.now(),
-): number {
+function compareOAuthEntries(a: StoredAuthEntry, b: StoredAuthEntry, now = Date.now()): number {
   const aValid = isAuthEntryValid(a, now) ? 1 : 0
   const bValid = isAuthEntryValid(b, now) ? 1 : 0
   if (aValid !== bValid) return bValid - aValid
   return (b.expiresAt ?? 0) - (a.expiresAt ?? 0)
 }
 
-function withOAuthTokenFields(
-  target: StoredAuthEntry,
-  source: StoredAuthEntry,
-): StoredAuthEntry {
+function withOAuthTokenFields(target: StoredAuthEntry, source: StoredAuthEntry): StoredAuthEntry {
   return {
     ...target,
     token: source.token,
@@ -256,10 +241,7 @@ export function loadSharedOAuthEntry(
   return candidates[0] ?? null
 }
 
-function readSharedOAuthEntry(
-  fingerprint: string,
-  now = Date.now(),
-): StoredAuthEntry | null {
+function readSharedOAuthEntry(fingerprint: string, now = Date.now()): StoredAuthEntry | null {
   try {
     const key = sharedOAuthStorageKey(fingerprint)
     const raw = localStorage.getItem(key)
@@ -328,22 +310,13 @@ export function findReusableOAuthEntry(options: {
   excludeSourceUrl?: string
 }): StoredAuthEntry | null {
   const now = Date.now()
-  const excludeKey = options.excludeSourceUrl
-    ? storageKey(options.excludeSourceUrl)
-    : null
+  const excludeKey = options.excludeSourceUrl ? storageKey(options.excludeSourceUrl) : null
   const candidates: StoredAuthEntry[] = []
 
   for (const key of listAuthStorageKeys()) {
     if (excludeKey && key === excludeKey) continue
     for (const entry of readEntriesFromKey(key, now)) {
-      if (
-        entryMatchesOAuthReuse(
-          entry,
-          options.flowKind,
-          options.tokenUrl,
-          options.clientId,
-        )
-      ) {
+      if (entryMatchesOAuthReuse(entry, options.flowKind, options.tokenUrl, options.clientId)) {
         candidates.push(entry)
       }
     }
@@ -401,8 +374,7 @@ export function loadStoredEntriesForSchemes(
     const localEntry = next.get(scheme.id)
     if (
       localEntry &&
-      (localEntry.type !== 'bearer' ||
-        (!localEntry.oauthTokenUrl && Boolean(localEntry.token)))
+      (localEntry.type !== 'bearer' || (!localEntry.oauthTokenUrl && Boolean(localEntry.token)))
     ) {
       // Keep non-OAuth credentials bound to this scheme id.
       continue
@@ -411,21 +383,12 @@ export function loadStoredEntriesForSchemes(
     const candidates: StoredAuthEntry[] = []
     if (
       localEntry &&
-      entryMatchesOAuthReuse(
-        localEntry,
-        flowKind,
-        scheme.tokenUrl,
-        scheme.clientId ?? '',
-      )
+      entryMatchesOAuthReuse(localEntry, flowKind, scheme.tokenUrl, scheme.clientId ?? '')
     ) {
       candidates.push(localEntry)
     }
 
-    const shared = loadSharedOAuthEntry(
-      flowKind,
-      scheme.tokenUrl,
-      scheme.clientId ?? '',
-    )
+    const shared = loadSharedOAuthEntry(flowKind, scheme.tokenUrl, scheme.clientId ?? '')
     if (shared) candidates.push(shared)
 
     const fromOthers = findReusableOAuthEntry({
@@ -481,9 +444,7 @@ export function syncOAuthEntryAcrossSources(
     return
   }
 
-  const excludeKey = options?.excludeSourceUrl
-    ? storageKey(options.excludeSourceUrl)
-    : null
+  const excludeKey = options?.excludeSourceUrl ? storageKey(options.excludeSourceUrl) : null
 
   for (const key of listAuthStorageKeys()) {
     if (excludeKey && key === excludeKey) continue

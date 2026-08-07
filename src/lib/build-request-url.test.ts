@@ -1,12 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { ParamInputMeta } from './param-schema'
 import { buildRequestHeaders, buildUrl, resolveServerUrl } from './build-request-url'
 
 describe('resolveServerUrl', () => {
   it('returns absolute server URLs unchanged', () => {
-    expect(resolveServerUrl('https://api.example.com/v1', 'https://spec.example/openapi.json')).toBe(
-      'https://api.example.com/v1',
-    )
+    expect(
+      resolveServerUrl('https://api.example.com/v1', 'https://spec.example/openapi.json'),
+    ).toBe('https://api.example.com/v1')
   })
 
   it('resolves relative server URLs against spec origin', () => {
